@@ -20,3 +20,6 @@ Thumbs.db
 
 # Streamlit
 .streamlit/secrets.toml
+.agents/skills/developing-with-streamlit
+
+.agents/skills/developing-with-streamlit
