@@ -7,6 +7,7 @@ st.set_page_config(
 )
 
 st.title("✈️ AI Trip Decision Optimizer")
+
 st.subheader("AI-powered travel planning and trip optimization")
 
 st.write(
