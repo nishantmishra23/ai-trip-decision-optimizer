@@ -88,6 +88,15 @@ def render_authenticated_home():
         "weather, hotels, activities, food and transportation."
     )
 
+    current = st.session_state.get("current_trip")
+    if current:
+        st.info(
+            f"Active trip: **{current.get('destination_name', 'Saved trip')}** "
+            f"(ID {current['trip_id']}). Continue in Trip Planner or Saved Trips."
+        )
+    else:
+        st.info("Start in **Trip Planner** to save dates, budget, and preferences.")
+
     if st.session_state.role == "ADMIN":
         st.info("Admin access is enabled. Open **Admin Dashboard** from the sidebar.")
 
