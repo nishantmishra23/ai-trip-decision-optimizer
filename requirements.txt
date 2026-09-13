@@ -1,0 +1,9 @@
+streamlit
+mysql-connector-python
+pandas
+numpy
+scikit-learn
+plotly
+requests
+python-dotenv
+bcrypt
