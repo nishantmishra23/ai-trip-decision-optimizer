@@ -1,119 +1,120 @@
+"""
+AI Trip Decision Optimizer — Main Entry Point
+Handles multi-page navigation, theme switching, sidebar branding, DB status indicator, and session state.
+"""
 import streamlit as st
-
-from auth.authentication import (
-    authenticate_user,
-    init_session,
-    is_authenticated,
-    login_user,
-    logout_user,
-    register_user,
-    render_user_sidebar,
-)
-from utils.ui import apply_global_styles, error_message, page_header, success_message
+from auth.auth import init_session
+from utils.theme import init_theme, inject_theme_css, render_theme_switcher
 
 st.set_page_config(
     page_title="AI Trip Decision Optimizer",
-    page_icon="✈️",
+    page_icon=":material/flight:",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
 
+# Initialize Session State & Theme
 init_session()
-apply_global_styles()
-render_user_sidebar()
-
-page_header(
-    "✈️ AI Trip Decision Optimizer",
-    "AI-powered travel planning and trip optimization",
-)
+init_theme()
+inject_theme_css()
 
 
-def render_login_form():
-    st.markdown("Sign in with the email and password you used at registration.")
-
-    with st.form("login_form", clear_on_submit=False):
-        email = st.text_input("Email", placeholder="you@example.com")
-        password = st.text_input("Password", type="password")
-        submitted = st.form_submit_button("Log in", use_container_width=True)
-
-    if submitted:
-        user, message = authenticate_user(email, password)
-        if user:
-            login_user(user)
-            success_message(f"Welcome back, {user['name']}.")
-            st.rerun()
-        else:
-            error_message(message)
+@st.cache_data(ttl=30)
+def _check_db() -> bool:
+    """Cached DB health check (refreshes every 30 s)."""
+    try:
+        from database.connection import db_available
+        return db_available()
+    except Exception:
+        return False
 
 
-def render_register_form():
-    st.markdown("Create a traveler account. New accounts start with the USER role.")
-
-    with st.form("register_form", clear_on_submit=False):
-        name = st.text_input("Full name", placeholder="Your name")
-        email = st.text_input("Email", placeholder="you@example.com")
-        password = st.text_input("Password", type="password", help="At least 8 characters.")
-        confirm_password = st.text_input("Confirm password", type="password")
-        submitted = st.form_submit_button("Create account", use_container_width=True)
-
-    if submitted:
-        success, message = register_user(name, email, password, confirm_password)
-        if success:
-            success_message(message)
-        else:
-            error_message(message)
-
-
-def render_authenticated_home():
-    st.success(f"Signed in as **{st.session_state.name}** ({st.session_state.role})")
-
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        with st.container(border=True):
-            st.markdown("### Traveler")
-            st.markdown(f"**{st.session_state.name}**")
-            st.caption(st.session_state.email)
-    with col2:
-        with st.container(border=True):
-            st.markdown("### Role")
-            st.markdown(f"**{st.session_state.role}**")
-            st.caption("USER plans trips. ADMIN manages the platform.")
-    with col3:
-        with st.container(border=True):
-            st.markdown("### Next step")
-            st.markdown("**Open Trip Planner**")
-            st.caption("Use the sidebar to start optimizing a trip.")
-
-    st.write(
-        "Find the best-value trip based on your budget, preferences, "
-        "weather, hotels, activities, food and transportation."
-    )
-
-    current = st.session_state.get("current_trip")
-    if current:
-        st.info(
-            f"Active trip: **{current.get('destination_name', 'Saved trip')}** "
-            f"(ID {current['trip_id']}). Continue in Trip Planner or Saved Trips."
-        )
+def _sidebar_db_status():
+    """Render a live DB status indicator in the sidebar."""
+    is_up = _check_db()
+    if is_up:
+        st.sidebar.success(":material/cloud_done: MySQL Connected", icon=None)
     else:
-        st.info("Start in **Trip Planner** to save dates, budget, and preferences.")
-
-    if st.session_state.role == "ADMIN":
-        st.info("Admin access is enabled. Open **Admin Dashboard** from the sidebar.")
-
-    if st.button("Log out"):
-        logout_user()
-        st.rerun()
+        st.sidebar.info(":material/cloud_off: Sample Data Mode", icon=None)
 
 
-if is_authenticated():
-    render_authenticated_home()
-else:
-    st.write(
-        "Find the best-value trip based on your budget, preferences, "
-        "weather, hotels, activities, food and transportation."
-    )
-    login_tab, register_tab = st.tabs(["Log in", "Create account"])
-    with login_tab:
-        render_login_form()
-    with register_tab:
-        render_register_form()
+def build_navigation():
+    logged_in = st.session_state.get("logged_in", False)
+    user = st.session_state.get("user", {}) or {}
+    is_admin = user.get("role", "") == "ADMIN"
+
+    pages = {
+        "Main": [
+            st.Page("app_pages/home.py", title="Home Dashboard", icon=":material/home:"),
+            st.Page("app_pages/login.py", title="Account & Auth", icon=":material/login:"),
+        ],
+        "Trip Planning": [
+            st.Page("app_pages/trip_planner.py", title="Trip Planner", icon=":material/map:"),
+            st.Page("app_pages/budget_optimizer.py", title="Budget Optimizer", icon=":material/calculate:"),
+            st.Page("app_pages/ai_itinerary.py", title="AI Itinerary", icon=":material/calendar_month:"),
+            st.Page("app_pages/ai_trip_optimizer.py", title="Multi-Factor Optimizer", icon=":material/auto_awesome:"),
+        ],
+        "Discover & Compare": [
+            st.Page("app_pages/destination_discovery.py", title="Destination Discovery", icon=":material/explore:"),
+            st.Page("app_pages/ai_recommendations.py", title="AI Recommendations", icon=":material/psychology:"),
+            st.Page("app_pages/destination_comparison.py", title="Destination Comparison", icon=":material/compare:"),
+        ],
+        "Stays & Experiences": [
+            st.Page("app_pages/hotel_recommendations.py", title="Hotels & Resorts", icon=":material/hotel:"),
+            st.Page("app_pages/restaurant_recommendations.py", title="Restaurants & Dining", icon=":material/restaurant:"),
+            st.Page("app_pages/activity_recommendations.py", title="Activities & Tours", icon=":material/hiking:"),
+        ],
+        "Travel Intelligence": [
+            st.Page("app_pages/weather_intelligence.py", title="Weather Intelligence", icon=":material/wb_sunny:"),
+            st.Page("app_pages/transportation_analysis.py", title="Transportation & Routes", icon=":material/train:"),
+        ],
+        "My Travels": [
+            st.Page("app_pages/saved_trips.py", title="Saved Itineraries", icon=":material/bookmark:"),
+            st.Page("app_pages/trip_history.py", title="Travel History", icon=":material/history:"),
+            st.Page("app_pages/trip_summary.py", title="Trip Summary", icon=":material/summarize:"),
+        ],
+        "Analytics": [
+            st.Page("app_pages/analytics.py", title="Platform Analytics", icon=":material/bar_chart:"),
+        ],
+    }
+
+    if is_admin:
+        pages["Analytics"].append(
+            st.Page(
+                "app_pages/admin_dashboard.py",
+                title="Admin Dashboard",
+                icon=":material/admin_panel_settings:",
+            )
+        )
+
+    return pages
+
+
+# ── Sidebar Branding & Controls ───────────────────────────────────────────────
+with st.sidebar:
+    st.markdown("## :material/flight: AI Trip Optimizer")
+    st.caption("Intelligent Multi-Factor Travel Planning Platform")
+    st.divider()
+
+    # Render Theme Switcher Toggle
+    render_theme_switcher()
+    st.divider()
+
+    # Auth status
+    if st.session_state.get("logged_in"):
+        user = st.session_state.get("user", {}) or {}
+        st.markdown(f"👤 Signed in as **{user.get('name', 'User')}**")
+        if st.button("Sign out", icon=":material/logout:", key="global_logout"):
+            from auth.auth import logout
+            logout()
+            st.rerun()
+    else:
+        st.caption("👤 Guest User")
+
+    # DB status indicator
+    _sidebar_db_status()
+
+# ── Navigation Execution ──────────────────────────────────────────────────────
+pages = build_navigation()
+page = st.navigation(pages, position="sidebar")
+page.run()
