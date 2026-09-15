@@ -3,8 +3,10 @@ Shared utility functions for AI Trip Decision Optimizer.
 """
 import streamlit as st
 from recommendation.engine import SAMPLE_DESTINATIONS
+from utils.theme import apply_plotly_theme
 
 
+@st.cache_data(ttl=60)
 def get_destinations_with_fallback():
     """Load destinations from DB; fall back to sample data."""
     try:
@@ -18,20 +20,28 @@ def get_destinations_with_fallback():
 
 
 def format_currency(amount: float) -> str:
-    """Format as Indian Rupees."""
-    if amount >= 100000:
-        return f"₹{amount / 100000:.1f}L"
-    if amount >= 1000:
-        return f"₹{amount / 1000:.1f}K"
+    """Format as Indian Rupees with appropriate scale."""
+    try:
+        amount = float(amount)
+    except (TypeError, ValueError):
+        return "₹0"
+    if amount >= 100_000:
+        return f"₹{amount / 100_000:.1f}L"
+    if amount >= 1_000:
+        return f"₹{amount / 1_000:.1f}K"
     return f"₹{amount:,.0f}"
 
 
 def rating_stars(rating: float) -> str:
     """Return star string for a rating out of 5."""
+    try:
+        rating = float(rating)
+    except (TypeError, ValueError):
+        return "☆☆☆☆☆"
     full = int(rating)
     half = 1 if (rating - full) >= 0.5 else 0
     empty = 5 - full - half
-    return "★" * full + "½" * half + "☆" * empty
+    return "★" * full + "½" * half + "☆" * empty + f"  {rating:.1f}"
 
 
 def no_data_message(message: str = "No data available."):
@@ -39,12 +49,13 @@ def no_data_message(message: str = "No data available."):
 
 
 def db_status_banner():
-    """Show a soft banner if DB is unavailable."""
-    try:
-        from database.connection import db_available
-        if not db_available():
-            st.caption(
-                ":material/cloud_off: Running in demo mode — connect MySQL for full functionality."
-            )
-    except Exception:
-        pass
+    """
+    DEPRECATED — DB status is now shown in the sidebar via app.py.
+    Kept for backward compatibility; does nothing.
+    """
+    pass
+
+
+def plotly_theme(fig):
+    """Apply active Light/Dark theme configuration to any Plotly chart."""
+    return apply_plotly_theme(fig)

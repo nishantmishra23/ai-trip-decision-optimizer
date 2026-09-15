@@ -1,93 +1,113 @@
+"""
+Transportation Analysis page for AI Trip Decision Optimizer.
+"""
 import streamlit as st
-import plotly.express as px
 import pandas as pd
+import plotly.express as px
+from utils.helpers import format_currency, plotly_theme
+from utils.theme import inject_theme_css
+from recommendation.engine import SAMPLE_DESTINATIONS
 
-try:
-    from database.queries import get_transportation_by_destination, get_all_destinations
-except ImportError:
-    def get_transportation_by_destination(dest_id): return []
-    def get_all_destinations(): return []
-
-try:
-    from recommendation.engine import SAMPLE_DESTINATIONS
-except ImportError:
-    SAMPLE_DESTINATIONS = [
-        {"name": "Goa", "avg_daily_cost": 3000, "id": 1},
-        {"name": "Manali", "avg_daily_cost": 2500, "id": 2},
-        {"name": "Jaipur", "avg_daily_cost": 2800, "id": 3},
-        {"name": "Munnar", "avg_daily_cost": 2200, "id": 4}
-    ]
-
-try:
-    from utils.helpers import db_status_banner
-except ImportError:
-    def db_status_banner(): pass
-
-st.title('Transportation', anchor=False)
-db_status_banner()
+inject_theme_css()
 
 SAMPLE_TRANSPORT = {
-    'Goa': [
-        {'transport_type': 'Flight', 'estimated_cost': 5000, 'duration_minutes': 120, 'rating': 4.5},
-        {'transport_type': 'Train', 'estimated_cost': 1500, 'duration_minutes': 720, 'rating': 4.0},
-        {'transport_type': 'Bus', 'estimated_cost': 1000, 'duration_minutes': 840, 'rating': 3.5}
+    "Goa": [
+        {"mode": "Direct Flight", "icon": ":material/flight:", "cost": 5500, "duration_hours": 2.5, "comfort_rating": 4.8},
+        {"mode": "Express Train", "icon": ":material/train:", "cost": 1800, "duration_hours": 11.0, "comfort_rating": 4.2},
+        {"mode": "Overnight Volvo Bus", "icon": ":material/directions_bus:", "cost": 1400, "duration_hours": 14.0, "comfort_rating": 3.9},
     ],
-    'Manali': [
-        {'transport_type': 'Flight (to Kullu)', 'estimated_cost': 8000, 'duration_minutes': 90, 'rating': 4.2},
-        {'transport_type': 'Volvo Bus', 'estimated_cost': 1500, 'duration_minutes': 840, 'rating': 4.3},
-        {'transport_type': 'Private Taxi', 'estimated_cost': 12000, 'duration_minutes': 720, 'rating': 4.6}
+    "Manali": [
+        {"mode": "Flight + Taxi", "icon": ":material/flight:", "cost": 7500, "duration_hours": 4.0, "comfort_rating": 4.5},
+        {"mode": "Overnight Sleeper Bus", "icon": ":material/directions_bus:", "cost": 1600, "duration_hours": 12.5, "comfort_rating": 4.1},
+        {"mode": "Self-drive SUV", "icon": ":material/directions_car:", "cost": 6000, "duration_hours": 11.0, "comfort_rating": 4.6},
     ],
-    'Jaipur': [
-        {'transport_type': 'Flight', 'estimated_cost': 3500, 'duration_minutes': 60, 'rating': 4.6},
-        {'transport_type': 'Train (Shatabdi)', 'estimated_cost': 800, 'duration_minutes': 240, 'rating': 4.8},
-        {'transport_type': 'Bus', 'estimated_cost': 600, 'duration_minutes': 300, 'rating': 4.1}
+    "Jaipur": [
+        {"mode": "Vande Bharat Express", "icon": ":material/train:", "cost": 1500, "duration_hours": 4.5, "comfort_rating": 4.7},
+        {"mode": "Direct Flight", "icon": ":material/flight:", "cost": 3800, "duration_hours": 1.0, "comfort_rating": 4.8},
+        {"mode": "Highway Bus", "icon": ":material/directions_bus:", "cost": 800, "duration_hours": 6.0, "comfort_rating": 4.0},
     ],
-    'Munnar': [
-        {'transport_type': 'Flight (to Kochi)', 'estimated_cost': 6000, 'duration_minutes': 180, 'rating': 4.4},
-        {'transport_type': 'Bus (from Kochi)', 'estimated_cost': 300, 'duration_minutes': 240, 'rating': 3.9},
-        {'transport_type': 'Taxi (from Kochi)', 'estimated_cost': 3000, 'duration_minutes': 210, 'rating': 4.7}
-    ]
+    "Paris": [
+        {"mode": "International Flight", "icon": ":material/flight:", "cost": 45000, "duration_hours": 9.5, "comfort_rating": 4.8},
+        {"mode": "TGV High-speed Train", "icon": ":material/train:", "cost": 8500, "duration_hours": 3.0, "comfort_rating": 4.9},
+    ],
+    "Munnar": [
+        {"mode": "Flight to Kochi + Taxi", "icon": ":material/flight:", "cost": 6500, "duration_hours": 4.5, "comfort_rating": 4.6},
+        {"mode": "Train to Ernakulam + Scenic Bus", "icon": ":material/train:", "cost": 1600, "duration_hours": 12.0, "comfort_rating": 4.1},
+        {"mode": "Intercity AC Sleeper Bus", "icon": ":material/directions_bus:", "cost": 1200, "duration_hours": 14.0, "comfort_rating": 3.9},
+    ],
+    "Agra": [
+        {"mode": "Gatimaan Express (Fast Train)", "icon": ":material/train:", "cost": 900, "duration_hours": 1.7, "comfort_rating": 4.8},
+        {"mode": "Yamuna Expressway Cab", "icon": ":material/directions_car:", "cost": 3200, "duration_hours": 3.0, "comfort_rating": 4.5},
+        {"mode": "Express Bus", "icon": ":material/directions_bus:", "cost": 450, "duration_hours": 4.0, "comfort_rating": 4.0},
+    ],
+    "Bali": [
+        {"mode": "Connecting Flight (DPS)", "icon": ":material/flight:", "cost": 28000, "duration_hours": 8.0, "comfort_rating": 4.7},
+        {"mode": "Island Ferry / Fast Boat", "icon": ":material/directions_boat:", "cost": 1500, "duration_hours": 2.0, "comfort_rating": 4.2},
+    ],
+    "Rishikesh": [
+        {"mode": "Vande Bharat / Jan Shatabdi Train", "icon": ":material/train:", "cost": 850, "duration_hours": 4.5, "comfort_rating": 4.7},
+        {"mode": "Flight to Dehradun + Taxi", "icon": ":material/flight:", "cost": 4200, "duration_hours": 2.0, "comfort_rating": 4.6},
+        {"mode": "Overnight Volvo Bus", "icon": ":material/directions_bus:", "cost": 750, "duration_hours": 6.0, "comfort_rating": 4.1},
+    ],
+    "Andaman Islands": [
+        {"mode": "Direct Flight to Port Blair", "icon": ":material/flight:", "cost": 11000, "duration_hours": 2.5, "comfort_rating": 4.8},
+        {"mode": "Inter-Island Catamaran / Ferry", "icon": ":material/directions_boat:", "cost": 1800, "duration_hours": 2.0, "comfort_rating": 4.5},
+    ],
+    "Leh-Ladakh": [
+        {"mode": "Direct Mountain Flight (IXL)", "icon": ":material/flight:", "cost": 8500, "duration_hours": 1.5, "comfort_rating": 4.7},
+        {"mode": "Manali-Leh Highway Expedition (SUV)", "icon": ":material/directions_car:", "cost": 7000, "duration_hours": 16.0, "comfort_rating": 4.5},
+    ],
 }
 
+# Hero Header Banner
+st.markdown("""
+<div class="app-hero-banner">
+    <div class="app-hero-title">🚆 Transportation & Route Analysis</div>
+    <div class="app-hero-subtitle">Compare flights, express trains, intercity buses, and self-drive routes by cost, duration, and convenience</div>
+</div>
+""", unsafe_allow_html=True)
+
 dest_names = [d["name"] for d in SAMPLE_DESTINATIONS]
-selected_dest = st.selectbox("Select Destination", dest_names)
 
-transport_data = []
-try:
-    dest_id = next((d.get("id", 1) for d in SAMPLE_DESTINATIONS if d["name"] == selected_dest), 1)
-    transport_data = get_transportation_by_destination(dest_id)
-except Exception as e:
-    st.error(f"Error fetching transport data: {e}")
+with st.container(border=True):
+    st.subheader(":material/tune: Route Selection", anchor=False)
+    selected_dest = st.selectbox("Select Target Destination", dest_names)
 
-if not transport_data:
-    transport_data = SAMPLE_TRANSPORT.get(selected_dest, SAMPLE_TRANSPORT['Goa'])
+routes = SAMPLE_TRANSPORT.get(selected_dest, [
+    {"mode": "Direct Flight", "icon": ":material/flight:", "cost": 6000, "duration_hours": 2.5, "comfort_rating": 4.7},
+    {"mode": "Express Train", "icon": ":material/train:", "cost": 2000, "duration_hours": 10.0, "comfort_rating": 4.3},
+    {"mode": "Intercity Bus", "icon": ":material/directions_bus:", "cost": 1200, "duration_hours": 12.0, "comfort_rating": 4.0},
+])
 
-st.subheader("Transport Options")
-cols = st.columns(3)
-for idx, opt in enumerate(transport_data):
-    with cols[idx % 3]:
+st.subheader(f":material/alt_route: Transit Mode Options for {selected_dest}", anchor=False)
+cols = st.columns(len(routes))
+
+for idx, r in enumerate(routes):
+    with cols[idx]:
         with st.container(border=True):
-            st.write(f"### {opt['transport_type']}")
-            st.write(f"**Cost:** ₹{opt['estimated_cost']}")
-            h = opt['duration_minutes'] // 60
-            m = opt['duration_minutes'] % 60
-            st.write(f"**Duration:** {h}h {m}m")
-            st.write(f"**Rating:** {opt['rating']} ⭐")
+            st.markdown(f"### {r['icon']} {r['mode']}")
+            st.metric("Estimated Cost", format_currency(r["cost"]))
+            st.metric("Duration", f"{r['duration_hours']} hrs")
+            st.caption(f"Comfort Score: **{r['comfort_rating']} / 5.0**")
 
-st.divider()
-st.subheader("Transportation Analytics")
-df = pd.DataFrame(transport_data)
-df['duration_hours'] = df['duration_minutes'] / 60
+# Visual Comparison Charts
+st.subheader(":material/bar_chart: Transit Cost & Travel Time Comparison", anchor=False)
+df_t = pd.DataFrame(routes)
 
-c1, c2 = st.columns(2)
+c1, c2 = st.columns(2, gap="medium")
 with c1:
-    fig_cost = px.bar(df, x='transport_type', y='estimated_cost', title='Cost by Transport Type', labels={'estimated_cost': 'Cost (₹)', 'transport_type': 'Transport Type'})
-    st.plotly_chart(fig_cost)
-with c2:
-    fig_dur = px.bar(df, y='transport_type', x='duration_hours', orientation='h', title='Duration by Transport Type', labels={'duration_hours': 'Duration (Hours)', 'transport_type': 'Transport Type'})
-    st.plotly_chart(fig_dur)
+    st.markdown("#### Travel Cost by Mode")
+    fig_cost = px.bar(df_t, x="mode", y="cost", color="mode", text_auto=True)
+    plotly_theme(fig_cost)
+    st.plotly_chart(fig_cost, key="trans_cost_chart")
 
-with st.expander("Travel Tips"):
-    st.write("- **Packing:** Pack light if you're taking flights to save on baggage fees.")
-    st.write("- **Booking Advice:** Book trains at least 30 days in advance for confirmed seats.")
-    st.write("- **Local Transport:** Use local ride-hailing apps or pre-paid taxis to avoid haggling.")
+with c2:
+    st.markdown("#### Duration by Mode (Hours)")
+    fig_dur = px.bar(df_t, x="duration_hours", y="mode", orientation="h", color="mode")
+    plotly_theme(fig_dur)
+    st.plotly_chart(fig_dur, key="trans_dur_chart")
+
+with st.expander(":material/lightbulb: Essential Travel & Packing Tips"):
+    st.write("• **Flight Bookings:** Book at least 3-4 weeks in advance for optimal fares.")
+    st.write("• **Train Tickets:** Tatkal quota opens 24 hours prior to departure for Indian Railways.")
+    st.write("• **Luggage:** Ensure baggage complies with airline limits (15kg check-in for domestic flights).")

@@ -1,8 +1,10 @@
 """
 AI Trip Decision Optimizer — Main Entry Point
+Handles multi-page navigation, theme switching, sidebar branding, DB status indicator, and session state.
 """
 import streamlit as st
 from auth.auth import init_session
+from utils.theme import init_theme, inject_theme_css, render_theme_switcher
 
 st.set_page_config(
     page_title="AI Trip Decision Optimizer",
@@ -11,7 +13,29 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# Initialize Session State & Theme
 init_session()
+init_theme()
+inject_theme_css()
+
+
+@st.cache_data(ttl=30)
+def _check_db() -> bool:
+    """Cached DB health check (refreshes every 30 s)."""
+    try:
+        from database.connection import db_available
+        return db_available()
+    except Exception:
+        return False
+
+
+def _sidebar_db_status():
+    """Render a live DB status indicator in the sidebar."""
+    is_up = _check_db()
+    if is_up:
+        st.sidebar.success(":material/cloud_done: MySQL Connected", icon=None)
+    else:
+        st.sidebar.info(":material/cloud_off: Sample Data Mode", icon=None)
 
 
 def build_navigation():
@@ -20,60 +44,77 @@ def build_navigation():
     is_admin = user.get("role", "") == "ADMIN"
 
     pages = {
-        "": [
-            st.Page("app_pages/home.py", title="Home", icon=":material/home:"),
-            st.Page("app_pages/login.py", title="Sign in", icon=":material/login:"),
+        "Main": [
+            st.Page("app_pages/home.py", title="Home Dashboard", icon=":material/home:"),
+            st.Page("app_pages/login.py", title="Account & Auth", icon=":material/login:"),
         ],
-        "Plan Your Trip": [
-            st.Page("app_pages/trip_planner.py", title="Trip planner", icon=":material/map:"),
-            st.Page("app_pages/budget_optimizer.py", title="Budget optimizer", icon=":material/calculate:"),
-            st.Page("app_pages/ai_itinerary.py", title="AI itinerary", icon=":material/calendar_month:"),
+        "Trip Planning": [
+            st.Page("app_pages/trip_planner.py", title="Trip Planner", icon=":material/map:"),
+            st.Page("app_pages/budget_optimizer.py", title="Budget Optimizer", icon=":material/calculate:"),
+            st.Page("app_pages/ai_itinerary.py", title="AI Itinerary", icon=":material/calendar_month:"),
+            st.Page("app_pages/ai_trip_optimizer.py", title="Multi-Factor Optimizer", icon=":material/auto_awesome:"),
         ],
-        "Discover": [
-            st.Page("app_pages/destination_discovery.py", title="Destination discovery", icon=":material/explore:"),
-            st.Page("app_pages/ai_recommendations.py", title="AI recommendations", icon=":material/psychology:"),
-            st.Page("app_pages/destination_comparison.py", title="Destination comparison", icon=":material/compare:"),
+        "Discover & Compare": [
+            st.Page("app_pages/destination_discovery.py", title="Destination Discovery", icon=":material/explore:"),
+            st.Page("app_pages/ai_recommendations.py", title="AI Recommendations", icon=":material/psychology:"),
+            st.Page("app_pages/destination_comparison.py", title="Destination Comparison", icon=":material/compare:"),
         ],
-        "Hotels & Dining": [
-            st.Page("app_pages/hotel_recommendations.py", title="Hotels", icon=":material/hotel:"),
-            st.Page("app_pages/restaurant_recommendations.py", title="Restaurants", icon=":material/restaurant:"),
-            st.Page("app_pages/activity_recommendations.py", title="Activities", icon=":material/hiking:"),
+        "Stays & Experiences": [
+            st.Page("app_pages/hotel_recommendations.py", title="Hotels & Resorts", icon=":material/hotel:"),
+            st.Page("app_pages/restaurant_recommendations.py", title="Restaurants & Dining", icon=":material/restaurant:"),
+            st.Page("app_pages/activity_recommendations.py", title="Activities & Tours", icon=":material/hiking:"),
         ],
-        "Travel Info": [
-            st.Page("app_pages/weather_intelligence.py", title="Weather intelligence", icon=":material/wb_sunny:"),
-            st.Page("app_pages/transportation_analysis.py", title="Transportation", icon=":material/train:"),
+        "Travel Intelligence": [
+            st.Page("app_pages/weather_intelligence.py", title="Weather Intelligence", icon=":material/wb_sunny:"),
+            st.Page("app_pages/transportation_analysis.py", title="Transportation & Routes", icon=":material/train:"),
         ],
-        "My Trips": [
-            st.Page("app_pages/saved_trips.py", title="Saved trips", icon=":material/bookmark:"),
-            st.Page("app_pages/trip_history.py", title="Trip history", icon=":material/history:"),
-            st.Page("app_pages/trip_summary.py", title="Trip summary", icon=":material/summarize:"),
+        "My Travels": [
+            st.Page("app_pages/saved_trips.py", title="Saved Itineraries", icon=":material/bookmark:"),
+            st.Page("app_pages/trip_history.py", title="Travel History", icon=":material/history:"),
+            st.Page("app_pages/trip_summary.py", title="Trip Summary", icon=":material/summarize:"),
         ],
-        "Insights": [
-            st.Page("app_pages/analytics.py", title="Analytics", icon=":material/bar_chart:"),
+        "Analytics": [
+            st.Page("app_pages/analytics.py", title="Platform Analytics", icon=":material/bar_chart:"),
         ],
     }
 
     if is_admin:
-        pages["Insights"].append(
-            st.Page("app_pages/admin_dashboard.py", title="Admin dashboard", icon=":material/admin_panel_settings:")
+        pages["Analytics"].append(
+            st.Page(
+                "app_pages/admin_dashboard.py",
+                title="Admin Dashboard",
+                icon=":material/admin_panel_settings:",
+            )
         )
 
     return pages
 
 
-# Sidebar header
+# ── Sidebar Branding & Controls ───────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("### ✈️ AI Trip Optimizer")
+    st.markdown("## :material/flight: AI Trip Optimizer")
+    st.caption("Intelligent Multi-Factor Travel Planning Platform")
+    st.divider()
+
+    # Render Theme Switcher Toggle
+    render_theme_switcher()
+    st.divider()
+
+    # Auth status
     if st.session_state.get("logged_in"):
         user = st.session_state.get("user", {}) or {}
-        st.caption(f"Logged in as **{user.get('name', 'User')}**")
-        if st.button("Log out", icon=":material/logout:", key="global_logout"):
+        st.markdown(f"👤 Signed in as **{user.get('name', 'User')}**")
+        if st.button("Sign out", icon=":material/logout:", key="global_logout"):
             from auth.auth import logout
             logout()
             st.rerun()
     else:
-        st.caption("Not logged in")
+        st.caption("👤 Guest User")
 
+    # DB status indicator
+    _sidebar_db_status()
+
+# ── Navigation Execution ──────────────────────────────────────────────────────
 pages = build_navigation()
 page = st.navigation(pages, position="sidebar")
 page.run()

@@ -1,62 +1,70 @@
+"""
+Trip History page for AI Trip Decision Optimizer.
+"""
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from database.queries import get_user_trips
 from auth.auth import init_session
-from utils.helpers import db_status_banner, format_currency
+from utils.helpers import format_currency, plotly_theme
+from utils.theme import inject_theme_css
 
-st.title('Trip history', anchor=False)
-db_status_banner()
 init_session()
+inject_theme_css()
 
-if not st.session_state.get('logged_in'):
-    st.warning("🔒 You are not logged in.")
-    st.info("Please log in to view your trip history.")
+# Hero Header Banner
+st.markdown("""
+<div class="app-hero-banner">
+    <div class="app-hero-title">📜 Travel History & Analytics</div>
+    <div class="app-hero-subtitle">Track your travel journey, total expenditure, visited destinations, and historical trip statistics</div>
+</div>
+""", unsafe_allow_html=True)
+
+if not st.session_state.get("logged_in"):
+    with st.container(border=True):
+        st.info("Please sign in to view your personal trip history.", icon=":material/lock:")
+        st.page_link("app_pages/login.py", label="Sign In / Register", icon=":material/login:")
     st.stop()
 
+user_id = st.session_state.user_id
+trips = []
 try:
-    user_trips = get_user_trips(st.session_state.get('user_id', 1))
-except Exception as e:
-    st.error("Error connecting to database.")
-    user_trips = []
+    from database.queries import get_user_trips
+    trips = get_user_trips(user_id)
+except Exception:
+    pass
 
-if not user_trips:
-    st.info("No trip history found. Showing demo data.")
-    user_trips = [
-        {'destination': 'Paris', 'country': 'France', 'start_date': '2022-05-10', 'end_date': '2022-05-17', 'duration_days': 7, 'travelers': 2, 'budget': 5000},
-        {'destination': 'Tokyo', 'country': 'Japan', 'start_date': '2023-10-01', 'end_date': '2023-10-10', 'duration_days': 10, 'travelers': 1, 'budget': 4000}
-    ]
+if not trips:
+    st.info("No recorded trip history found in your account.", icon=":material/history_toggle_off:")
+else:
+    df_trips = pd.DataFrame(trips)
+    
+    # User Stats KPI Cards
+    st.subheader(":material/monitoring: Personal Travel Statistics", anchor=False)
+    m1, m2, m3 = st.columns(3)
+    
+    with m1:
+        with st.container(border=True):
+            st.metric("Total Trips", str(len(trips)))
+    with m2:
+        with st.container(border=True):
+            countries = df_trips["country"].nunique() if "country" in df_trips else 1
+            st.metric("Countries Visited", str(countries))
+    with m3:
+        with st.container(border=True):
+            total_spend = df_trips["total_budget"].sum() if "total_budget" in df_trips else 0
+            st.metric("Total Travel Spend", format_currency(total_spend))
 
-# Top stats
-total_trips = len(user_trips)
-countries_visited = len(set(t.get('country') for t in user_trips if t.get('country')))
-total_spend = sum(t.get('budget', 0) for t in user_trips)
+    # Detailed Table
+    st.subheader(":material/table_chart: Historical Itineraries", anchor=False)
+    st.dataframe(
+        df_trips,
+        column_config={
+            "total_budget": st.column_config.NumberColumn(format="₹%d"),
+        }
+    )
 
-col1, col2, col3 = st.columns(3)
-col1.metric("Total Trips", total_trips)
-col2.metric("Countries Visited", countries_visited)
-col3.metric("Total Budgeted Spend", format_currency(total_spend))
-
-# Dataframe
-df = pd.DataFrame(user_trips)
-display_df = df[['destination', 'country', 'start_date', 'end_date', 'duration_days', 'travelers', 'budget']].rename(
-    columns={
-        'destination': 'Destination',
-        'country': 'Country',
-        'start_date': 'Start Date',
-        'end_date': 'End Date',
-        'duration_days': 'Days',
-        'travelers': 'Travelers',
-        'budget': 'Budget'
-    }
-)
-st.dataframe(display_df, hide_index=True)
-
-if len(user_trips) > 1:
-    st.subheader("Budget by Trip")
-    bar_fig = px.bar(display_df, x='Destination', y='Budget', title="Budget by Destination")
-    st.plotly_chart(bar_fig)
-
-    st.subheader("Trips by Destination")
-    pie_fig = px.pie(display_df, names='Destination', title="Destination Distribution")
-    st.plotly_chart(pie_fig)
+    # Charts
+    st.subheader(":material/bar_chart: Historical Travel Spend per Trip", anchor=False)
+    fig_spend = px.bar(df_trips, x="destination_name", y="total_budget", color="destination_name", text_auto=True)
+    plotly_theme(fig_spend)
+    st.plotly_chart(fig_spend, key="history_spend_chart")

@@ -1,107 +1,137 @@
+"""
+AI Itinerary Generator page for AI Trip Decision Optimizer.
+"""
 import streamlit as st
-import datetime
-import random
+from datetime import date, timedelta
+import pandas as pd
 import plotly.express as px
 from recommendation.engine import SAMPLE_DESTINATIONS
-from utils.helpers import db_status_banner
+from utils.helpers import format_currency, plotly_theme
+from utils.theme import inject_theme_css
 from auth.auth import init_session
+from services.llm_service import generate_itinerary
 
-st.title('AI itinerary', anchor=False)
-db_status_banner()
 init_session()
+inject_theme_css()
 
-ACTIVITIES_BY_DEST = {
-    "default": [
-        "Visit local museum",
-        "City walking tour",
-        "Try local cuisine at food market",
-        "Relax at a central park",
-        "Shopping at main street",
-        "Evening boat ride",
-        "Attend a cultural show",
-        "Visit historical monument"
-    ]
-}
+# Hero Header Banner
+st.markdown("""
+<div class="app-hero-banner">
+    <div class="app-hero-title">📅 AI Itinerary Generator</div>
+    <div class="app-hero-subtitle">Generate a custom day-by-day travel schedule powered by Google Gemini AI</div>
+</div>
+""", unsafe_allow_html=True)
 
-dest_names = [dest['name'] for dest in SAMPLE_DESTINATIONS] if SAMPLE_DESTINATIONS else ["Goa", "Bali", "Paris", "Tokyo"]
+dest_names = [d["name"] for d in SAMPLE_DESTINATIONS]
+dest_dict = {d["name"]: d for d in SAMPLE_DESTINATIONS}
 
-with st.form("itinerary_form"):
-    destination = st.selectbox("Destination", dest_names)
-    duration = st.number_input("Duration (Days)", min_value=1, max_value=14, value=5)
-    travelers = st.number_input("Travelers", min_value=1, max_value=20, value=2)
-    start_date = st.date_input("Start Date", datetime.date.today() + datetime.timedelta(days=7))
-    travel_style = st.selectbox("Travel Style", ["Budget", "Comfort", "Luxury", "Adventure"])
+with st.container(border=True):
+    st.subheader(":material/tune: Itinerary Parameters", anchor=False)
+    with st.form("itinerary_form"):
+        c1, c2 = st.columns(2, gap="medium")
+        with c1:
+            destination = st.selectbox("Destination", dest_names)
+            duration = st.slider("Trip Duration (Days)", min_value=1, max_value=10, value=4)
+            travelers = st.number_input("Number of Travellers", min_value=1, max_value=10, value=2)
+            budget = st.number_input("Total Budget (₹)", min_value=5000, max_value=500000, value=40000, step=5000)
+        with c2:
+            start_date = st.date_input("Start Date", value=date.today() + timedelta(days=7))
+            travel_style = st.selectbox("Pace & Style", ["Balanced Explorer", "Action Packed", "Relaxed & Leisure", "Luxury", "Budget Backpacker"])
+            activities = st.multiselect(
+                "Interests",
+                ["Beach & Water Sports", "Adventure", "Trekking", "Heritage", "Shopping", "Food & Cuisine", "Nightlife", "Culture"],
+                default=["Food & Cuisine", "Culture"]
+            )
+        
+        submitted = st.form_submit_button("Generate Day-by-Day Itinerary", icon=":material/auto_awesome:", type="primary")
+
+selected_dest = dest_dict.get(destination, SAMPLE_DESTINATIONS[0])
+
+if submitted:
+    with st.spinner("✨ Gemini is planning your perfect trip..."):
+        result = generate_itinerary(
+            destination=destination,
+            duration=duration,
+            travel_style=travel_style,
+            travelers=travelers,
+            budget=budget,
+            activities=activities
+        )
+        st.session_state["current_itinerary"] = result
+        st.session_state["itinerary_dest"] = destination
+        st.session_state["itinerary_start"] = start_date
+        st.session_state["itinerary_travelers"] = travelers
+
+if "current_itinerary" in st.session_state:
+    dest_name = st.session_state.get("itinerary_dest", destination)
+    start_dt = st.session_state.get("itinerary_start", date.today() + timedelta(days=7))
+    trv = st.session_state.get("itinerary_travelers", travelers)
+    result = st.session_state["current_itinerary"]
     
-    generate_btn = st.form_submit_button("Generate Itinerary")
-
-if generate_btn:
-    st.subheader(f"Your {duration}-day itinerary for {destination}")
+    if result.get("source") == "fallback":
+        st.info("💡 Generating itinerary using travel intelligence rules.", icon=":material/info:")
+    else:
+        st.success("✨ Custom itinerary generated using Gemini AI!", icon=":material/check_circle:")
+        
+    st.subheader(f":material/timeline: Day-by-Day Schedule for {dest_name}", anchor=False)
     
-    total_cost = 0
     daily_costs = []
     
-    # Generate itinerary
-    for day in range(1, duration + 1):
-        st.subheader(f"Day {day} - {(start_date + datetime.timedelta(days=day-1)).strftime('%b %d, %Y')}")
-        
+    for idx, day_data in enumerate(result.get("itinerary", [])):
+        day_date = start_dt + timedelta(days=idx)
         day_cost = 0
-        with st.expander(f"Day {day} Schedule", expanded=(day == 1)):
-            if day == 1:
-                cost = random.randint(20, 100)
-                st.write(f"**Morning (10:00 AM - 12:00 PM)**: Arrival & Hotel Check-in - Estimated Cost: ${cost}")
-                day_cost += cost
-                
-                cost = random.randint(10, 50)
-                st.write(f"**Afternoon (1:00 PM - 4:00 PM)**: Local Area Walk & Exploration - Estimated Cost: ${cost}")
-                day_cost += cost
-                
-                cost = random.randint(30, 150)
-                st.write(f"**Evening (7:00 PM - 9:00 PM)**: Welcome Dinner - Estimated Cost: ${cost}")
-                day_cost += cost
-            elif day == duration:
-                cost = 0
-                st.write(f"**Morning (9:00 AM - 11:00 AM)**: Hotel Checkout - Estimated Cost: ${cost}")
-                day_cost += cost
-                
-                cost = random.randint(20, 80)
-                st.write(f"**Afternoon (12:00 PM - 3:00 PM)**: Last Minute Shopping & Departure - Estimated Cost: ${cost}")
-                day_cost += cost
-            else:
-                activities = ACTIVITIES_BY_DEST.get(destination, ACTIVITIES_BY_DEST["default"])
-                
-                cost = random.randint(20, 100)
-                st.write(f"**Morning (9:00 AM - 12:00 PM)**: {random.choice(activities)} - Estimated Cost: ${cost}")
-                day_cost += cost
-                
-                cost = random.randint(20, 100)
-                st.write(f"**Afternoon (2:00 PM - 5:00 PM)**: {random.choice(activities)} - Estimated Cost: ${cost}")
-                day_cost += cost
-                
-                cost = random.randint(30, 150)
-                st.write(f"**Evening (7:00 PM - 10:00 PM)**: {random.choice(activities)} - Estimated Cost: ${cost}")
-                day_cost += cost
-                
-        daily_costs.append(day_cost)
-        total_cost += day_cost
         
-    st.markdown("---")
-    st.subheader("Cost Breakdown")
-    st.metric("Total Estimated Cost", f"${total_cost}")
+        with st.container(border=True):
+            st.markdown(f"#### 🗓️ {day_data.get('day', f'Day {idx+1}')} — {day_date.strftime('%A, %b %d')}")
+            if day_data.get("title"):
+                st.caption(f"**Theme:** {day_data.get('title')}")
+            st.divider()
+            
+            slots = day_data.get("slots", [])
+            for s_idx, slot in enumerate(slots):
+                per_person_cost = float(slot.get("cost", 0))
+                actual_cost = per_person_cost * trv
+                day_cost += actual_cost
+                
+                time_label = slot.get('time', f'Slot {s_idx+1}')
+                title_label = slot.get('title', 'Activity')
+                tip_label = slot.get('tip', '')
+                
+                c_slot1, c_slot2 = st.columns([3, 1])
+                with c_slot1:
+                    st.markdown(f"**⏰ {time_label}** — {title_label}")
+                    if tip_label:
+                        st.caption(f"💡 *Tip:* {tip_label}")
+                with c_slot2:
+                    st.markdown(f"**{format_currency(actual_cost)}**")
+                    if trv > 1:
+                        st.caption(f"({format_currency(per_person_cost)}/person)")
+                
+                if s_idx < len(slots) - 1:
+                    st.markdown("<hr style='margin: 0.5rem 0; border: none; border-top: 1px dashed var(--border-color);' />", unsafe_allow_html=True)
+                    
+            daily_costs.append({"Day": day_data.get("day", f"Day {idx+1}"), "Estimated Cost (₹)": day_cost})
+            
+    # Total Cost Summary & Cost Distribution Chart
+    total_trip_cost = sum(d["Estimated Cost (₹)"] for d in daily_costs)
     
-    fig = px.bar(
-        x=[f"Day {i}" for i in range(1, duration + 1)],
-        y=daily_costs,
-        labels={"x": "Day", "y": "Cost ($)"},
-        title="Daily Cost Distribution"
-    )
-    st.plotly_chart(fig)
-    
-    if st.session_state.get('logged_in'):
-        if st.button("Save to My Trips"):
-            try:
-                # Mock call or real DB insert logic could go here
-                st.success("Trip saved successfully!")
-            except Exception as e:
-                st.error("Error saving trip.")
-    else:
-        st.info("Log in to save this itinerary.")
+    st.divider()
+    m1, m2 = st.columns(2)
+    with m1:
+        st.metric(label="Total Estimated Trip Cost", value=format_currency(total_trip_cost))
+    with m2:
+        st.metric(label="Cost Per Person", value=format_currency(total_trip_cost / max(trv, 1)))
+        
+    df_days = pd.DataFrame(daily_costs)
+    if not df_days.empty:
+        st.subheader(":material/bar_chart: Daily Cost Distribution", anchor=False)
+        fig_daily = px.bar(
+            df_days, 
+            x="Day", 
+            y="Estimated Cost (₹)", 
+            text_auto=True, 
+            color="Day",
+            color_discrete_sequence=px.colors.qualitative.Bold
+        )
+        plotly_theme(fig_daily)
+        st.plotly_chart(fig_daily, key="itinerary_daily_cost_chart")

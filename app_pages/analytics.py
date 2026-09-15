@@ -1,92 +1,101 @@
+"""
+Analytics & Data Insights page for AI Trip Decision Optimizer.
+"""
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from database.queries import get_all_destinations
 from recommendation.engine import SAMPLE_DESTINATIONS
-from utils.helpers import db_status_banner
+from utils.helpers import format_currency, plotly_theme
+from utils.theme import inject_theme_css
 
-st.title('Analytics', anchor=False)
-db_status_banner()
+inject_theme_css()
 
-try:
-    destinations = get_all_destinations()
-except Exception as e:
-    destinations = None
+# Hero Header Banner
+st.markdown("""
+<div class="app-hero-banner">
+    <div class="app-hero-title">📊 Analytics & Platform Insights</div>
+    <div class="app-hero-subtitle">Comprehensive data-driven breakdown of global destinations, pricing trends, and user ratings</div>
+</div>
+""", unsafe_allow_html=True)
 
-if not destinations:
-    st.info("Database unavailable. Showing sample destinations.")
-    destinations = SAMPLE_DESTINATIONS
+def load_destinations():
+    try:
+        from database.queries import get_all_destinations
+        d = get_all_destinations()
+        if d:
+            return d
+    except Exception:
+        pass
+    return SAMPLE_DESTINATIONS
 
-if not destinations:
-    st.error("No destination data available.")
-    st.stop()
+dests = load_destinations()
+df_dest = pd.DataFrame(dests)
 
-df = pd.DataFrame(destinations)
+if "average_daily_cost" not in df_dest.columns and "avg_daily_cost" in df_dest.columns:
+    df_dest["average_daily_cost"] = df_dest["avg_daily_cost"]
 
-# Add missing columns if they don't exist in sample data
-if 'country' not in df.columns:
-    df['country'] = 'Unknown'
-if 'category' not in df.columns:
-    df['category'] = 'General'
-if 'average_daily_cost' not in df.columns:
-    df['average_daily_cost'] = 100
-if 'rating' not in df.columns:
-    df['rating'] = 4.0
-if 'popularity' not in df.columns:
-    df['popularity'] = 5
+if "popularity_score" in df_dest.columns:
+    df_dest["popularity_score"] = pd.to_numeric(df_dest["popularity_score"], errors="coerce").fillna(7.0)
 
-# Metrics
-count_dest = len(df)
-avg_daily = df['average_daily_cost'].mean()
-avg_rating = df['rating'].mean()
-most_pop = df.loc[df['popularity'].idxmax(), 'name'] if 'name' in df.columns and 'popularity' in df.columns else 'N/A'
+if "rating" in df_dest.columns:
+    df_dest["rating"] = pd.to_numeric(df_dest["rating"], errors="coerce").fillna(4.5)
 
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Total Destinations", count_dest)
-col2.metric("Avg Daily Cost", f"${avg_daily:.2f}")
-col3.metric("Avg Rating", f"{avg_rating:.1f}/5.0")
-col4.metric("Most Popular", most_pop)
+if "average_daily_cost" in df_dest.columns:
+    df_dest["average_daily_cost"] = pd.to_numeric(df_dest["average_daily_cost"], errors="coerce").fillna(3000.0)
 
-# Charts
-st.subheader("Destinations by Country")
-country_counts = df['country'].value_counts().reset_index()
-country_counts.columns = ['Country', 'Count']
-fig_country = px.bar(country_counts, x='Country', y='Count', title="Count of Destinations per Country")
-st.plotly_chart(fig_country)
+# Key Data Metrics
+st.subheader(":material/monitoring: Platform Key Performance Indicators", anchor=False)
+m1, m2, m3, m4 = st.columns(4)
 
-st.subheader("Cost vs Rating")
-fig_scatter = px.scatter(
-    df, 
-    x='average_daily_cost', 
-    y='rating', 
-    text='name', 
-    color='category',
-    labels={'average_daily_cost': 'Avg Daily Cost ($)', 'rating': 'Rating'},
-    title="Average Daily Cost vs Rating by Category"
-)
-fig_scatter.update_traces(textposition='top center')
-st.plotly_chart(fig_scatter)
+with m1:
+    with st.container(border=True):
+        st.metric("Total Destinations", str(len(df_dest)))
+with m2:
+    with st.container(border=True):
+        avg_cost = df_dest["average_daily_cost"].mean() if "average_daily_cost" in df_dest else 3000
+        st.metric("Avg Daily Cost", format_currency(avg_cost))
+with m3:
+    with st.container(border=True):
+        avg_rate = df_dest["rating"].mean() if "rating" in df_dest else 4.5
+        st.metric("Avg Platform Rating", f"{avg_rate:.1f} / 5.0")
+with m4:
+    with st.container(border=True):
+        top_dest = df_dest.loc[df_dest["popularity_score"].idxmax()]["name"] if "popularity_score" in df_dest and not df_dest.empty else "Goa"
+        st.metric("Most Popular Destination", top_dest)
 
-st.subheader("Destinations by Category")
-cat_counts = df['category'].value_counts().reset_index()
-cat_counts.columns = ['Category', 'Count']
-fig_cat = px.bar(cat_counts, x='Category', y='Count', title="Count of Destinations per Category")
-st.plotly_chart(fig_cat)
+# Analytics Charts Grid
+st.subheader(":material/analytics: Price vs Rating Distribution", anchor=False)
+c1, c2 = st.columns(2, gap="medium")
 
-st.subheader("Average Cost by Category")
-cat_cost = df.groupby('category')['average_daily_cost'].mean().reset_index()
-fig_cost = px.bar(cat_cost, x='category', y='average_daily_cost', title="Average Daily Cost per Category")
-st.plotly_chart(fig_cost)
+with c1:
+    st.markdown("#### Daily Cost vs Rating Scatter Plot")
+    fig_scatter = px.scatter(
+        df_dest, 
+        x="average_daily_cost", 
+        y="rating", 
+        text="name", 
+        color="country",
+        size="popularity_score" if "popularity_score" in df_dest else None,
+        labels={"average_daily_cost": "Avg Daily Cost (₹)", "rating": "Rating (0-5)"}
+    )
+    plotly_theme(fig_scatter)
+    st.plotly_chart(fig_scatter, key="analytics_scatter_chart")
 
-st.subheader("All Destinations Data")
-display_df = df[['name', 'country', 'category', 'average_daily_cost', 'rating', 'popularity']].rename(
-    columns={
-        'name': 'Name',
-        'country': 'Country',
-        'category': 'Category',
-        'average_daily_cost': 'Daily Cost',
-        'rating': 'Rating',
-        'popularity': 'Popularity'
+with c2:
+    st.markdown("#### Destinations by Country")
+    country_counts = df_dest["country"].value_counts().reset_index()
+    country_counts.columns = ["Country", "Count"]
+    fig_country = px.bar(country_counts, x="Country", y="Count", color="Country", text_auto=True)
+    plotly_theme(fig_country)
+    st.plotly_chart(fig_country, key="analytics_country_chart")
+
+# Destination Dataset Table
+st.subheader(":material/table_chart: Raw Destination Dataset", anchor=False)
+st.dataframe(
+    df_dest,
+    column_config={
+        "average_daily_cost": st.column_config.NumberColumn(format="₹%d"),
+        "rating": st.column_config.NumberColumn(format="%.1f ⭐"),
+        "popularity_score": st.column_config.NumberColumn(format="%.1f / 10"),
     }
 )
-st.dataframe(display_df, hide_index=True)

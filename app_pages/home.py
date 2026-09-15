@@ -1,68 +1,100 @@
-"""Home / Dashboard page."""
+"""
+Home / Main Dashboard page for AI Trip Decision Optimizer.
+"""
 import streamlit as st
 from auth.auth import init_session
-from utils.helpers import get_destinations_with_fallback, format_currency, db_status_banner
-from recommendation.engine import get_sample_destinations
+from utils.helpers import get_destinations_with_fallback
+from utils.theme import inject_theme_css
+from utils.components import render_destination_card
 
 init_session()
-db_status_banner()
+inject_theme_css()
 
 user = st.session_state.get("user", {}) or {}
-name = user.get("name", "Traveller")
+name = user.get("name", "Explorer")
 
-st.title("Welcome back, " + name + "! ✈️", anchor=False)
-st.caption("Your AI-powered travel planning hub — find, plan, and optimize your next trip.")
+# Hero Banner
+st.markdown(f"""
+<div class="app-hero-banner">
+    <div class="app-hero-title">👋 Welcome, {name}!</div>
+    <div class="app-hero-subtitle">AI Trip Decision Optimizer — Intelligent multi-factor decision engine for seamless travel planning & destination discovery</div>
+</div>
+""", unsafe_allow_html=True)
 
-# ── Quick stats ──────────────────────────────────────────────────────────────
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    st.metric("Destinations available", "10+", help="Sample destinations loaded")
-with col2:
-    st.metric("Average trip budget", "₹45,000", help="Based on 7-day trips")
-with col3:
-    st.metric("User rating", "4.7 / 5.0", help="Average destination rating")
-with col4:
-    st.metric("Countries", "3+", help="India, Indonesia, France & more")
+with st.container(border=True):
+    st.caption(":material/auto_awesome: **SMART TRAVEL SEARCH & COMMAND CENTER**")
+    
+    c_search, c_btn = st.columns([4, 1])
+    with c_search:
+        search_query = st.text_input("What are you planning?", placeholder="Search destinations, styles, or countries...", label_visibility="collapsed")
+    with c_btn:
+        if st.button("Explore", type="primary", icon=":material/search:"):
+            st.switch_page("app_pages/destination_discovery.py")
 
-st.divider()
+# Key Statistics Metrics
+try:
+    from database.queries import count_destinations, count_trips
+    c_dests = count_destinations()
+    c_trips = count_trips()
+except Exception:
+    c_dests = "10+"
+    c_trips = "50+"
 
-# ── Featured destinations ─────────────────────────────────────────────────────
-st.subheader(":material/explore: Featured destinations", anchor=False)
+m1, m2, m3, m4 = st.columns(4)
+with m1:
+    with st.container(border=True):
+        st.metric("Top Destinations", str(c_dests), help="Curated travel locations available")
+with m2:
+    with st.container(border=True):
+        st.metric("Avg Daily Budget", "₹3,500", help="Estimated average daily cost")
+with m3:
+    with st.container(border=True):
+        st.metric("Satisfaction Rating", "4.7 / 5.0", help="Average user satisfaction score")
+with m4:
+    with st.container(border=True):
+        st.metric("Trips Planned", str(c_trips), help="Total itineraries generated")
+
+st.markdown("### :material/explore: Featured Destinations")
 
 dests = get_destinations_with_fallback()[:6]
 cols = st.columns(3)
+
 for i, dest in enumerate(dests):
     with cols[i % 3]:
-        with st.container(border=True):
-            st.markdown(f"**{dest['name']}**, {dest['country']}")
-            cost = dest.get('average_daily_cost', 0)
-            rating = dest.get('rating', 0)
-            st.caption(f"₹{cost:,.0f}/day · ⭐ {rating}/5.0")
-            desc = (dest.get('description') or '')[:100]
-            st.write(desc + "..." if len(dest.get('description', '')) > 100 else desc)
+        render_destination_card(dest, show_details=False)
 
-st.divider()
-
-# ── Quick actions ─────────────────────────────────────────────────────────────
-st.subheader(":material/bolt: Quick actions", anchor=False)
+st.markdown("### :material/history: Recent Activity & Shortcuts")
 c1, c2, c3, c4 = st.columns(4)
 with c1:
-    st.page_link("app_pages/trip_planner.py", label="Plan a trip", icon=":material/map:")
+    with st.container(border=True):
+        st.markdown("#### :material/map: Trip Planner")
+        st.caption("Build custom trip plans with budget splits.")
+        st.page_link("app_pages/trip_planner.py", label="Open Planner", icon=":material/arrow_forward:")
 with c2:
-    st.page_link("app_pages/ai_recommendations.py", label="Get recommendations", icon=":material/psychology:")
+    with st.container(border=True):
+        st.markdown("#### :material/psychology: AI Recommendations")
+        st.caption("Rank destinations using weighted AI scoring.")
+        st.page_link("app_pages/ai_recommendations.py", label="Get Recommendations", icon=":material/arrow_forward:")
 with c3:
-    st.page_link("app_pages/budget_optimizer.py", label="Optimize budget", icon=":material/calculate:")
+    with st.container(border=True):
+        st.markdown("#### :material/calculate: Budget Optimizer")
+        st.caption("Optimize expenses by hotel, food, and activities.")
+        st.page_link("app_pages/budget_optimizer.py", label="Optimize Budget", icon=":material/arrow_forward:")
 with c4:
-    st.page_link("app_pages/destination_comparison.py", label="Compare destinations", icon=":material/compare:")
+    with st.container(border=True):
+        st.markdown("#### :material/history: Saved Trips")
+        st.caption("View your previously generated itineraries.")
+        st.page_link("app_pages/saved_trips.py", label="View Trips", icon=":material/arrow_forward:")
 
 st.divider()
 
-# ── Auth prompt ───────────────────────────────────────────────────────────────
 if not st.session_state.get("logged_in"):
-    st.info(
-        "**Sign in** to save trips, track history, and get personalized recommendations.",
-        icon=":material/lock:",
-    )
-    c1, c2 = st.columns([1, 5])
-    with c1:
-        st.page_link("app_pages/login.py", label="Sign in / Register", icon=":material/login:")
+    with st.container(border=True):
+        st.markdown("#### :material/lock: Personalize Your Experience")
+        st.caption("Sign in to save trip itineraries, track history, and get custom recommendations.")
+        st.page_link("app_pages/login.py", label="Sign In / Register", icon=":material/login:")
+else:
+    with st.container(border=True):
+        st.markdown(f"#### :material/waving_hand: Welcome Back, {name}!")
+        st.caption("You have access to saved itineraries and personalized decision tools.")
+        st.page_link("app_pages/saved_trips.py", label="View Saved Trips", icon=":material/bookmark:")

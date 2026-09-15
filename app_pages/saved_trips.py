@@ -1,54 +1,56 @@
+"""
+Saved Trips page for AI Trip Decision Optimizer.
+"""
 import streamlit as st
-import datetime
-from database.queries import get_user_trips
 from auth.auth import init_session
-from utils.helpers import db_status_banner, format_currency
+from utils.helpers import format_currency
+from utils.theme import inject_theme_css
 
-st.title('Saved trips', anchor=False)
-db_status_banner()
 init_session()
+inject_theme_css()
 
-if not st.session_state.get('logged_in'):
-    st.warning("🔒 You are not logged in.")
-    st.info("Please log in to view your saved trips.")
-    st.page_link("app.py", label="Go to Home / Login")
+# Hero Header Banner
+st.markdown("""
+<div class="app-hero-banner">
+    <div class="app-hero-title">🔖 Saved Trip Itineraries</div>
+    <div class="app-hero-subtitle">Access and manage your saved trip plans and customized travel itineraries</div>
+</div>
+""", unsafe_allow_html=True)
+
+if not st.session_state.get("logged_in"):
+    with st.container(border=True):
+        st.info("Please sign in to access your saved trips.", icon=":material/lock:")
+        st.page_link("app_pages/login.py", label="Sign In / Register", icon=":material/login:")
     st.stop()
 
+user_id = st.session_state.user_id
+trips = []
 try:
-    user_trips = get_user_trips(st.session_state.get('user_id', 1))
-except Exception as e:
-    st.error("Error connecting to database.")
-    user_trips = []
+    from database.queries import get_user_trips
+    trips = get_user_trips(user_id)
+except Exception:
+    pass
 
-if not user_trips:
-    st.info("You haven't saved any trips yet.")
-    st.page_link("app_pages/ai_itinerary.py", label="Plan a Trip")
+if not trips:
+    with st.container(border=True):
+        st.info("You haven't saved any trips yet! Use the Trip Planner or AI Recommendations to create one.", icon=":material/info:")
+        st.page_link("app_pages/trip_planner.py", label="Plan Your First Trip", icon=":material/map:")
 else:
-    st.metric("Total Saved Trips", len(user_trips))
-    
-    for trip in user_trips:
-        with st.container(border=True):
-            st.markdown(f"**{trip.get('destination')} ({trip.get('country', 'N/A')})**")
-            
-            start_date = trip.get('start_date')
-            end_date = trip.get('end_date')
-            duration = trip.get('duration_days', 0)
-            travelers = trip.get('travelers', 1)
-            budget = format_currency(trip.get('budget', 0))
-            
-            st.write(f"📅 **Dates:** {start_date} - {end_date}")
-            st.write(f"⏱️ **Duration:** {duration} days")
-            st.write(f"👥 **Travelers:** {travelers} | 💰 **Budget:** {budget}")
-            
-            try:
-                if isinstance(start_date, str):
-                    start_date_obj = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
-                else:
-                    start_date_obj = start_date
+    st.markdown(f"### Saved Itineraries ({len(trips)})")
+    cols = st.columns(3)
+    for idx, t in enumerate(trips):
+        dest_name = t.get("destination_name", "Destination")
+        start_date = t.get("start_date", "")
+        end_date = t.get("end_date", "")
+        budget = t.get("total_budget", 0)
+        travelers = t.get("travelers", 1)
+        
+        with cols[idx % 3]:
+            with st.container(border=True):
+                st.markdown(f"### 📍 {dest_name}")
+                st.caption(f":material/calendar_month: {start_date} to {end_date}")
                 
-                if start_date_obj and start_date_obj > datetime.date.today():
-                    st.markdown("🟡 **Status:** Upcoming")
-                else:
-                    st.markdown("🟢 **Status:** Past")
-            except Exception:
-                st.markdown("⚪ **Status:** Unknown")
+                st.metric("Total Budget", format_currency(budget))
+                st.caption(f"Travellers: **{travelers}**")
+                
+                st.page_link("app_pages/trip_summary.py", label="View Full Summary", icon=":material/arrow_forward:")

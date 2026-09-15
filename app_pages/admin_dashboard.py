@@ -1,102 +1,97 @@
+"""
+Admin Dashboard page for AI Trip Decision Optimizer.
+"""
 import streamlit as st
 import pandas as pd
 import os
-from database.queries import get_all_users, get_all_destinations, count_users, count_destinations, count_trips, insert_destination
 from auth.auth import init_session
 from database.connection import db_available
-from utils.helpers import db_status_banner
+from database.queries import (
+    get_all_users,
+    get_all_destinations,
+    count_users,
+    count_destinations,
+    count_trips,
+    insert_destination,
+)
+from utils.theme import inject_theme_css
 
-st.title('Admin dashboard', anchor=False)
-db_status_banner()
 init_session()
+inject_theme_css()
 
-if not st.session_state.get('logged_in') or st.session_state.get('user_role') != 'ADMIN':
-    st.error('Access denied. Administrator privileges required.')
+# Admin Security Gate
+user = st.session_state.get("user", {}) or {}
+if not st.session_state.get("logged_in") or user.get("role") != "ADMIN":
+    st.error("Access denied. Admin privileges required to view this dashboard.", icon=":material/gpp_bad:")
+    st.info("Log in with an Admin account or set user role to ADMIN.", icon=":material/info:")
     st.stop()
 
-# Metrics
-try:
-    c_users = count_users()
-except:
-    c_users = 0
+# Hero Header Banner
+st.markdown("""
+<div class="app-hero-banner">
+    <div class="app-hero-title">🛡️ System Administration Dashboard</div>
+    <div class="app-hero-subtitle">Control panel for managing database records, reviewing registered accounts, and system health</div>
+</div>
+""", unsafe_allow_html=True)
 
-try:
-    c_dests = count_destinations()
-except:
-    c_dests = 0
-    
-try:
-    c_trips = count_trips()
-except:
-    c_trips = 0
+# Platform Metrics
+m1, m2, m3, m4 = st.columns(4)
 
-db_status_text = 'Online' if db_available() else 'Offline'
+with m1:
+    with st.container(border=True):
+        st.metric("Total Registered Users", str(count_users()))
+with m2:
+    with st.container(border=True):
+        st.metric("Total Destinations", str(count_destinations()))
+with m3:
+    with st.container(border=True):
+        st.metric("Total Trips Planned", str(count_trips()))
+with m4:
+    with st.container(border=True):
+        status_text = "Online" if db_available() else "Sample Mode"
+        st.metric("Database Status", status_text)
 
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Total Users", c_users)
-col2.metric("Total Destinations", c_dests)
-col3.metric("Total Trips", c_trips)
-col4.metric("DB Status", db_status_text)
-
-tab1, tab2, tab3 = st.tabs(["Users", "Destinations", "System"])
+tab1, tab2, tab3 = st.tabs(["User Management", "Destination Catalog", "System Health"])
 
 with tab1:
-    st.subheader("User Management")
-    try:
-        users = get_all_users()
-        if users:
-            users_df = pd.DataFrame(users)
-            if 'id' in users_df.columns:
-                users_df = users_df.rename(columns={'id': 'ID', 'name': 'Name', 'email': 'Email', 'role': 'Role', 'created_at': 'Joined'})
-            st.dataframe(users_df, hide_index=True)
-        else:
-            st.info("No users found.")
-    except Exception as e:
-        st.error("Failed to load users.")
+    st.subheader("Registered Users", anchor=False)
+    users = get_all_users()
+    if users:
+        st.dataframe(pd.DataFrame(users))
+    else:
+        st.info("No registered user records found.")
 
 with tab2:
-    st.subheader("Destinations Management")
-    try:
-        destinations = get_all_destinations()
-        if destinations:
-            dest_df = pd.DataFrame(destinations)
-            st.dataframe(dest_df, hide_index=True)
-        else:
-            st.info("No destinations found.")
-    except Exception as e:
-        st.error("Failed to load destinations.")
-        
-    st.markdown("---")
-    st.subheader("Add New Destination")
+    st.subheader("Add New Destination Record", anchor=False)
     with st.form("add_dest_form"):
-        name = st.text_input("Name")
-        country = st.text_input("Country")
-        description = st.text_area("Description")
-        avg_cost = st.number_input("Avg Daily Cost", min_value=0, value=100)
-        popularity = st.slider("Popularity", 1, 10, 5)
-        rating = st.slider("Rating", 1.0, 5.0, 4.0, 0.1)
+        c1, c2 = st.columns(2)
+        with c1:
+            d_name = st.text_input("Destination Name")
+            d_country = st.text_input("Country")
+            d_cost = st.number_input("Average Daily Cost (₹)", min_value=100, max_value=100000, value=3000)
+        with c2:
+            d_pop = st.slider("Popularity Score (1-10)", 1.0, 10.0, 8.5)
+            d_rat = st.slider("Rating (1-5)", 1.0, 5.0, 4.5)
+            d_desc = st.text_area("Description")
         
-        submit = st.form_submit_button("Add Destination")
-        if submit:
-            try:
-                insert_destination(name, country, description, avg_cost, popularity, rating)
-                st.success(f"Successfully added destination: {name}")
-            except Exception as e:
-                st.error(f"Error adding destination: {str(e)}")
+        submitted = st.form_submit_button("Add Destination to DB", icon=":material/add:")
+        if submitted:
+            if d_name and d_country:
+                ok = insert_destination(d_name, d_country, d_desc, d_cost, d_pop, d_rat)
+                if ok:
+                    st.success(f"Successfully added {d_name}!", icon=":material/check_circle:")
+                else:
+                    st.error("Failed to add destination to MySQL database.", icon=":material/error:")
+            else:
+                st.warning("Destination Name and Country are required.", icon=":material/warning:")
+
+    st.subheader("Existing Destination Records", anchor=False)
+    dests = get_all_destinations()
+    if dests:
+        st.dataframe(pd.DataFrame(dests))
 
 with tab3:
-    st.subheader("System Status")
-    st.markdown("**Environment Variables**")
-    env_vars = ['DB_HOST', 'DB_USER', 'DB_NAME', 'DB_PORT', 'WEATHER_API_KEY']
-    env_status = []
-    
-    for var in env_vars:
-        val = os.getenv(var)
-        status = 'Set' if val else 'Not set'
-        env_status.append({'Variable': var, 'Status': status})
-        
-    st.dataframe(pd.DataFrame(env_status), hide_index=True)
-    
-    st.markdown("**Python Environment**")
-    import sys
-    st.write(f"Python Version: {sys.version}")
+    st.subheader("Environment & System Diagnostics", anchor=False)
+    env_keys = ["DB_HOST", "DB_USER", "DB_NAME", "DB_PORT", "WEATHER_API_KEY", "GEMINI_API_KEY"]
+    env_status = [{"Variable": k, "Status": "Configured" if os.getenv(k) else "Not set / Default"} for k in env_keys]
+    st.dataframe(pd.DataFrame(env_status))

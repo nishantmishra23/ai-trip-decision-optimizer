@@ -1,88 +1,107 @@
+"""
+Destination Comparison page for AI Trip Decision Optimizer.
+"""
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from database.queries import get_all_destinations
-from recommendation.engine import SAMPLE_DESTINATIONS
+from utils.helpers import get_destinations_with_fallback, format_currency, plotly_theme
+from utils.theme import inject_theme_css
 
-st.title('Destination comparison', anchor=False)
+inject_theme_css()
 
-destinations = []
-try:
-    dests = get_all_destinations()
-    if dests:
-        destinations = dests
-    else:
-        destinations = SAMPLE_DESTINATIONS
-except Exception:
-    destinations = SAMPLE_DESTINATIONS
+# Hero Header Banner
+st.markdown("""
+<div class="app-hero-banner">
+    <div class="app-hero-title">⚖️ Destination Comparison</div>
+    <div class="app-hero-subtitle">Compare costs, ratings, popularity, and key features side-by-side to choose your ideal destination</div>
+</div>
+""", unsafe_allow_html=True)
 
-dest_names = [d.get("name") for d in destinations]
-selected = st.multiselect("Select 2-4 destinations to compare", dest_names, max_selections=4)
+dests = get_destinations_with_fallback()
+dest_dict = {d["name"]: d for d in dests}
 
-if len(selected) < 2:
-    st.info("Please select at least 2 destinations to compare.")
-else:
-    comp_dests = [d for d in destinations if d.get("name") in selected]
-    
-    # Metrics table
-    data = []
-    for d in comp_dests:
-        data.append({
-            "Destination": d.get("name"),
-            "Country": d.get("country"),
-            "Daily Cost": d.get("average_daily_cost"),
-            "Rating": d.get("rating"),
-            "Popularity": d.get("popularity", 50)
-        })
-    df = pd.DataFrame(data)
-    st.dataframe(df, hide_index=True)
-    
-    # Price comparison bar chart
-    fig_price = px.bar(df, x="Destination", y="Daily Cost", title="Price Comparison")
-    st.plotly_chart(fig_price)
-    
-    # Radar chart
+selected_names = st.multiselect(
+    "Select 2 to 4 destinations to compare",
+    options=list(dest_dict.keys()),
+    default=["Goa", "Manali", "Bali"] if len(dests) >= 3 else list(dest_dict.keys())[:2],
+)
+
+if len(selected_names) < 2:
+    st.info("Please select at least 2 destinations to enable side-by-side comparison.", icon=":material/info:")
+    st.stop()
+
+selected_dests = [dest_dict[name] for name in selected_names]
+
+# Side-by-side Destination Cards
+st.subheader(":material/grid_view: Destination Comparison Cards", anchor=False)
+cols = st.columns(len(selected_dests))
+
+for idx, d in enumerate(selected_dests):
+    with cols[idx]:
+        with st.container(border=True):
+            st.markdown(f"### 📍 {d.get('name')}")
+            st.caption(f"{d.get('country')} • {d.get('category', 'Travel')}")
+            
+            cost = d.get("average_daily_cost", d.get("avg_daily_cost", 0))
+            st.metric("Avg Daily Cost", format_currency(cost))
+            st.metric("Rating", f"{d.get('rating', 4.5)} / 5.0")
+            st.metric("Popularity", f"{d.get('popularity_score', 8.5)} / 10")
+
+# Comparison Table
+st.subheader(":material/table_chart: Metric Summary Table", anchor=False)
+table_data = []
+for d in selected_dests:
+    table_data.append({
+        "Destination": d.get("name"),
+        "Country": d.get("country"),
+        "Category": d.get("category", "N/A"),
+        "Avg Daily Cost (₹)": d.get("average_daily_cost", d.get("avg_daily_cost", 0)),
+        "Rating": d.get("rating", 4.0),
+        "Popularity Score": d.get("popularity_score", 7.0),
+        "Season": d.get("season", "Year-round"),
+    })
+
+df_table = pd.DataFrame(table_data)
+st.dataframe(
+    df_table,
+    column_config={
+        "Avg Daily Cost (₹)": st.column_config.NumberColumn(format="₹%d"),
+        "Rating": st.column_config.NumberColumn(format="%.1f ⭐"),
+        "Popularity Score": st.column_config.NumberColumn(format="%.1f / 10"),
+    },
+)
+
+# Visual Radar & Bar Charts
+st.subheader(":material/analytics: Visual Side-by-Side Analytics", anchor=False)
+c1, c2 = st.columns(2, gap="medium")
+
+with c1:
+    st.markdown("#### Daily Cost Comparison")
+    fig_bar = px.bar(
+        df_table, x="Destination", y="Avg Daily Cost (₹)", color="Destination",
+        text_auto=True, color_discrete_sequence=px.colors.qualitative.Bold
+    )
+    plotly_theme(fig_bar)
+    st.plotly_chart(fig_bar, key="comp_daily_cost_chart")
+
+with c2:
+    st.markdown("#### Overall Rating & Popularity Radar")
+    categories_radar = ["Rating (x20)", "Popularity (x10)", "Affordability"]
     fig_radar = go.Figure()
-    for d in comp_dests:
-        cost = d.get("average_daily_cost", 1000)
-        cost_eff = max(0, 100 - (cost / 150))
-        rating_score = d.get("rating", 0) * 20
-        pop_score = d.get("popularity", 50) * 10
+    
+    for d in selected_dests:
+        cost = d.get("average_daily_cost", d.get("avg_daily_cost", 3000))
+        affordability = max(10, 100 - (cost / 150))
+        rating_score = d.get("rating", 4.0) * 20
+        pop_score = d.get("popularity_score", 7.0) * 10
         
         fig_radar.add_trace(go.Scatterpolar(
-            r=[cost_eff, rating_score, pop_score],
-            theta=['Cost Efficiency', 'Rating', 'Popularity'],
+            r=[rating_score, pop_score, affordability],
+            theta=categories_radar,
             fill='toself',
             name=d.get("name")
         ))
-    fig_radar.update_layout(
-        polar=dict(
-            radialaxis=dict(visible=True, range=[0, 100])
-        ),
-        showlegend=True,
-        title="Destination Metrics Radar"
-    )
-    st.plotly_chart(fig_radar)
-    
-    # Summary cards
-    st.subheader("Destination Summaries")
-    cols = st.columns(len(comp_dests))
-    for i, d in enumerate(comp_dests):
-        with cols[i]:
-            with st.container(border=True):
-                st.markdown(f"**{d.get('name')}**")
-                try:
-                    from database.queries import get_counts
-                    counts = get_counts(d.get("id"))
-                    hotels = counts.get("hotels", 15)
-                    restaurants = counts.get("restaurants", 25)
-                    activities = counts.get("activities", 10)
-                except Exception:
-                    hotels = 15
-                    restaurants = 25
-                    activities = 10
-                
-                st.write(f"Hotels: {hotels}")
-                st.write(f"Restaurants: {restaurants}")
-                st.write(f"Activities: {activities}")
+        
+    plotly_theme(fig_radar)
+    st.plotly_chart(fig_radar, key="comp_radar_chart")
