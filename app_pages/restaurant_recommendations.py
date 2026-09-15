@@ -36,7 +36,37 @@ SAMPLE_RESTAURANTS = {
     "Paris": [
         {"name": "Le Jules Verne", "cuisine": "French Fine Dining", "average_cost": 18000, "rating": 4.9, "destination_name": "Paris"},
         {"name": "Bouillon Chartier", "cuisine": "Traditional French", "average_cost": 2500, "rating": 4.4, "destination_name": "Paris"},
-    ]
+    ],
+    "Munnar": [
+        {"name": "Saravana Bhavan Munnar", "cuisine": "Authentic South Indian & Thali", "average_cost": 350, "rating": 4.5, "destination_name": "Munnar"},
+        {"name": "Rapsy Restaurant", "cuisine": "Traditional Kerala & Biryani", "average_cost": 500, "rating": 4.4, "destination_name": "Munnar"},
+        {"name": "Zaza Bistro", "cuisine": "Continental & Hillside Bakery", "average_cost": 850, "rating": 4.4, "destination_name": "Munnar"},
+    ],
+    "Agra": [
+        {"name": "Peshawri at ITC Mughal", "cuisine": "Mughlai Fine Dining & Kebabs", "average_cost": 3200, "rating": 4.8, "destination_name": "Agra"},
+        {"name": "Pinch of Spice", "cuisine": "North Indian & Mughlai", "average_cost": 1200, "rating": 4.6, "destination_name": "Agra"},
+        {"name": "Dasaprakash", "cuisine": "Pure Veg & South Indian", "average_cost": 550, "rating": 4.4, "destination_name": "Agra"},
+    ],
+    "Bali": [
+        {"name": "Locavore Ubud", "cuisine": "Modern Indonesian Fine Dining", "average_cost": 4500, "rating": 4.9, "destination_name": "Bali"},
+        {"name": "Sardine Seafood & Wine", "cuisine": "Fresh Seafood & Mediterranean", "average_cost": 2800, "rating": 4.7, "destination_name": "Bali"},
+        {"name": "Warung Ibu Oka", "cuisine": "Traditional Balinese Cuisine", "average_cost": 550, "rating": 4.6, "destination_name": "Bali"},
+    ],
+    "Rishikesh": [
+        {"name": "The Sitting Elephant", "cuisine": "Riverside Israeli & Indian", "average_cost": 650, "rating": 4.6, "destination_name": "Rishikesh"},
+        {"name": "Little Buddha Cafe", "cuisine": "Continental & Organic Bakery", "average_cost": 700, "rating": 4.5, "destination_name": "Rishikesh"},
+        {"name": "Chotiwala Traditional Restaurant", "cuisine": "Garhwali & North Indian Thali", "average_cost": 350, "rating": 4.4, "destination_name": "Rishikesh"},
+    ],
+    "Andaman Islands": [
+        {"name": "Full Moon Cafe Havelock", "cuisine": "Fresh Seafood & Mexican", "average_cost": 950, "rating": 4.6, "destination_name": "Andaman Islands"},
+        {"name": "Anju Coco Resto", "cuisine": "Multicuisine & Fresh Juices", "average_cost": 700, "rating": 4.5, "destination_name": "Andaman Islands"},
+        {"name": "Something Different Beachside", "cuisine": "Seafood & Tandoori", "average_cost": 1100, "rating": 4.5, "destination_name": "Andaman Islands"},
+    ],
+    "Leh-Ladakh": [
+        {"name": "Gesmo Restaurant", "cuisine": "Tibetan Momos & Bakery", "average_cost": 600, "rating": 4.6, "destination_name": "Leh-Ladakh"},
+        {"name": "The Tibetan Kitchen", "cuisine": "Authentic Tibetan & Thukpa", "average_cost": 500, "rating": 4.7, "destination_name": "Leh-Ladakh"},
+        {"name": "Bon Appetit", "cuisine": "Mountain View Continental", "average_cost": 900, "rating": 4.5, "destination_name": "Leh-Ladakh"},
+    ],
 }
 
 def load_restaurants():

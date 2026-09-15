@@ -23,21 +23,62 @@ SAMPLE_ACTIVITIES = {
         {"name": "Scuba Diving at Grande Island", "category": "Water Sports", "price": 3500, "duration_hrs": 4, "rating": 4.8, "destination_name": "Goa"},
         {"name": "Dudhsagar Waterfalls Trek", "category": "Trekking", "price": 2000, "duration_hrs": 6, "rating": 4.7, "destination_name": "Goa"},
         {"name": "Sunset Cruise on Mandovi River", "category": "Sightseeing", "price": 800, "duration_hrs": 2, "rating": 4.5, "destination_name": "Goa"},
+        {"name": "Old Goa Heritage Church Tour", "category": "Heritage", "price": 500, "duration_hrs": 3, "rating": 4.4, "destination_name": "Goa"},
     ],
     "Manali": [
         {"name": "Solang Valley Paragliding", "category": "Adventure", "price": 3000, "duration_hrs": 2, "rating": 4.7, "destination_name": "Manali"},
         {"name": "Beas River White Water Rafting", "category": "Adventure", "price": 1800, "duration_hrs": 3, "rating": 4.6, "destination_name": "Manali"},
         {"name": "Rohtang Pass Snow Scooter", "category": "Adventure", "price": 2500, "duration_hrs": 4, "rating": 4.8, "destination_name": "Manali"},
+        {"name": "Hadimba Temple & Cedar Forest Walk", "category": "Heritage", "price": 300, "duration_hrs": 2, "rating": 4.5, "destination_name": "Manali"},
     ],
     "Jaipur": [
         {"name": "Amber Fort Elephant / Jeep Safari", "category": "Heritage", "price": 1200, "duration_hrs": 3, "rating": 4.7, "destination_name": "Jaipur"},
         {"name": "Hot Air Balloon Ride", "category": "Adventure", "price": 12000, "duration_hrs": 3, "rating": 4.9, "destination_name": "Jaipur"},
+        {"name": "City Palace & Jantar Mantar Tour", "category": "Heritage", "price": 700, "duration_hrs": 3, "rating": 4.6, "destination_name": "Jaipur"},
+        {"name": "Hawa Mahal Photography & Street Walk", "category": "Sightseeing", "price": 200, "duration_hrs": 2, "rating": 4.5, "destination_name": "Jaipur"},
+    ],
+    "Munnar": [
+        {"name": "Tea Plantation & Processing Walk", "category": "Nature", "price": 400, "duration_hrs": 3, "rating": 4.7, "destination_name": "Munnar"},
+        {"name": "Eravikulam National Park Nilgiri Tahr Safari", "category": "Wildlife", "price": 650, "duration_hrs": 4, "rating": 4.6, "destination_name": "Munnar"},
+        {"name": "Traditional Ayurvedic Spa & Wellness", "category": "Yoga & Wellness", "price": 2500, "duration_hrs": 2, "rating": 4.8, "destination_name": "Munnar"},
+        {"name": "Top Station Panoramic Trek", "category": "Trekking", "price": 800, "duration_hrs": 5, "rating": 4.6, "destination_name": "Munnar"},
+    ],
+    "Agra": [
+        {"name": "Taj Mahal Sunrise Guided Tour", "category": "Heritage", "price": 1100, "duration_hrs": 3, "rating": 4.9, "destination_name": "Agra"},
+        {"name": "Agra Fort Mughal Citadel Walk", "category": "Heritage", "price": 600, "duration_hrs": 2, "rating": 4.6, "destination_name": "Agra"},
+        {"name": "Fatehpur Sikri Royal Complex Excursion", "category": "Heritage", "price": 850, "duration_hrs": 4, "rating": 4.5, "destination_name": "Agra"},
+        {"name": "Mehtab Bagh River Sunset View", "category": "Sightseeing", "price": 350, "duration_hrs": 2, "rating": 4.7, "destination_name": "Agra"},
+    ],
+    "Bali": [
+        {"name": "Tanah Lot Sea Temple Sunset", "category": "Heritage", "price": 800, "duration_hrs": 3, "rating": 4.8, "destination_name": "Bali"},
+        {"name": "Tegallalang Rice Terrace Trek", "category": "Nature", "price": 500, "duration_hrs": 2, "rating": 4.7, "destination_name": "Bali"},
+        {"name": "Kuta Beach Surfing Lessons", "category": "Water Sports", "price": 1800, "duration_hrs": 3, "rating": 4.6, "destination_name": "Bali"},
+        {"name": "Balinese Traditional Massage & Wellness", "category": "Yoga & Wellness", "price": 2600, "duration_hrs": 2, "rating": 4.8, "destination_name": "Bali"},
+    ],
+    "Paris": [
+        {"name": "Eiffel Tower Summit Access & Tour", "category": "Sightseeing", "price": 3200, "duration_hrs": 3, "rating": 4.8, "destination_name": "Paris"},
+        {"name": "Louvre Museum Masterpieces Guided Visit", "category": "Heritage", "price": 2400, "duration_hrs": 3, "rating": 4.9, "destination_name": "Paris"},
+        {"name": "Seine River Evening Dinner Cruise", "category": "Sightseeing", "price": 4500, "duration_hrs": 3, "rating": 4.7, "destination_name": "Paris"},
+        {"name": "Versailles Palace & Royal Gardens", "category": "Heritage", "price": 3800, "duration_hrs": 5, "rating": 4.8, "destination_name": "Paris"},
     ],
     "Rishikesh": [
         {"name": "Ganges River Rafting (16km)", "category": "Adventure", "price": 1500, "duration_hrs": 4, "rating": 4.8, "destination_name": "Rishikesh"},
         {"name": "Bungee Jumping at Jumpin Heights", "category": "Adventure", "price": 3800, "duration_hrs": 2, "rating": 4.9, "destination_name": "Rishikesh"},
-        {"name": "Sunrise Yoga & Meditation", "category": "Yoga & Wellness", "price": 500, "duration_hrs": 2, "rating": 4.7, "destination_name": "Rishikesh"},
-    ]
+        {"name": "Sunrise Yoga & Ashram Meditation", "category": "Yoga & Wellness", "price": 500, "duration_hrs": 2, "rating": 4.7, "destination_name": "Rishikesh"},
+        {"name": "Beatles Ashram Cultural Walk", "category": "Heritage", "price": 300, "duration_hrs": 2, "rating": 4.5, "destination_name": "Rishikesh"},
+    ],
+    "Andaman Islands": [
+        {"name": "Scuba Diving at Elephant Beach", "category": "Water Sports", "price": 4200, "duration_hrs": 4, "rating": 4.8, "destination_name": "Andaman Islands"},
+        {"name": "Radhanagar Beach White Sands Sunset", "category": "Sightseeing", "price": 500, "duration_hrs": 2, "rating": 4.9, "destination_name": "Andaman Islands"},
+        {"name": "Cellular Jail National Memorial & Light Show", "category": "Heritage", "price": 400, "duration_hrs": 3, "rating": 4.6, "destination_name": "Andaman Islands"},
+        {"name": "Mangrove Forest Kayaking Expedition", "category": "Nature", "price": 1800, "duration_hrs": 3, "rating": 4.7, "destination_name": "Andaman Islands"},
+    ],
+    "Leh-Ladakh": [
+        {"name": "Pangong Tso High-Altitude Lake Excursion", "category": "Nature", "price": 3500, "duration_hrs": 8, "rating": 4.9, "destination_name": "Leh-Ladakh"},
+        {"name": "Khardung La Pass Motorbike Experience", "category": "Adventure", "price": 2200, "duration_hrs": 4, "rating": 4.8, "destination_name": "Leh-Ladakh"},
+        {"name": "Nubra Valley Sand Dunes & Camel Safari", "category": "Adventure", "price": 2800, "duration_hrs": 6, "rating": 4.7, "destination_name": "Leh-Ladakh"},
+        {"name": "Thiksey & Hemis Monasteries Tour", "category": "Heritage", "price": 700, "duration_hrs": 4, "rating": 4.6, "destination_name": "Leh-Ladakh"},
+    ],
 }
 
 def load_activities():

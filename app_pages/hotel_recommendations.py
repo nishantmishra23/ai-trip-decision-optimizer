@@ -44,7 +44,37 @@ SAMPLE_HOTELS = {
         {"name": "Le Meurice", "price_per_night": 35000, "rating": 4.9, "hotel_type": "Luxury Hotel", "destination_name": "Paris"},
         {"name": "Hotel Plaza Athénée", "price_per_night": 42000, "rating": 4.9, "hotel_type": "Luxury Hotel", "destination_name": "Paris"},
         {"name": "CitizenM Paris Gare de Lyon", "price_per_night": 12000, "rating": 4.5, "hotel_type": "Boutique Hotel", "destination_name": "Paris"},
-    ]
+    ],
+    "Munnar": [
+        {"name": "Spice Tree Munnar Luxury Resort", "price_per_night": 12000, "rating": 4.8, "hotel_type": "Luxury Resort", "destination_name": "Munnar"},
+        {"name": "Windermere Estate Boutique Retreat", "price_per_night": 9500, "rating": 4.7, "hotel_type": "Boutique Hotel", "destination_name": "Munnar"},
+        {"name": "Tea Nest Hillside Cottage", "price_per_night": 4500, "rating": 4.5, "hotel_type": "Mid-range Hotel", "destination_name": "Munnar"},
+        {"name": "Zostel Munnar", "price_per_night": 950, "rating": 4.3, "hotel_type": "Hostel / Budget", "destination_name": "Munnar"},
+    ],
+    "Agra": [
+        {"name": "The Oberoi Amarvilas (Taj View)", "price_per_night": 38000, "rating": 4.9, "hotel_type": "Luxury Hotel", "destination_name": "Agra"},
+        {"name": "ITC Mughal Resort & Spa", "price_per_night": 11000, "rating": 4.7, "hotel_type": "Luxury Resort", "destination_name": "Agra"},
+        {"name": "Crystal Sarovar Premiere", "price_per_night": 5500, "rating": 4.4, "hotel_type": "Mid-range Hotel", "destination_name": "Agra"},
+        {"name": "Zostel Agra", "price_per_night": 800, "rating": 4.2, "hotel_type": "Hostel / Budget", "destination_name": "Agra"},
+    ],
+    "Rishikesh": [
+        {"name": "Ananda in the Himalayas", "price_per_night": 35000, "rating": 4.9, "hotel_type": "Luxury Wellness Resort", "destination_name": "Rishikesh"},
+        {"name": "Tattva Luxury Riverside Resort", "price_per_night": 5500, "rating": 4.5, "hotel_type": "Resort", "destination_name": "Rishikesh"},
+        {"name": "Divine Ganga Cottage", "price_per_night": 2800, "rating": 4.4, "hotel_type": "Boutique Hotel", "destination_name": "Rishikesh"},
+        {"name": "Zostel Rishikesh Tapovan", "price_per_night": 850, "rating": 4.4, "hotel_type": "Hostel / Budget", "destination_name": "Rishikesh"},
+    ],
+    "Andaman Islands": [
+        {"name": "Barefoot at Havelock Eco-Luxury", "price_per_night": 15000, "rating": 4.8, "hotel_type": "Eco-Luxury Resort", "destination_name": "Andaman Islands"},
+        {"name": "Munjoh Ocean Resort", "price_per_night": 12000, "rating": 4.7, "hotel_type": "Beach Resort", "destination_name": "Andaman Islands"},
+        {"name": "Symphony Palms Beach Resort", "price_per_night": 7500, "rating": 4.5, "hotel_type": "Mid-range Resort", "destination_name": "Andaman Islands"},
+        {"name": "Aqua Hostel Havelock", "price_per_night": 1100, "rating": 4.3, "hotel_type": "Hostel / Budget", "destination_name": "Andaman Islands"},
+    ],
+    "Leh-Ladakh": [
+        {"name": "The Grand Dragon Ladakh", "price_per_night": 9500, "rating": 4.7, "hotel_type": "Luxury Hotel", "destination_name": "Leh-Ladakh"},
+        {"name": "Chamba Camp Thiksey Glamping", "price_per_night": 16000, "rating": 4.8, "hotel_type": "Luxury Glamping", "destination_name": "Leh-Ladakh"},
+        {"name": "Hotel Bijoo Leh", "price_per_night": 3500, "rating": 4.3, "hotel_type": "Mid-range Hotel", "destination_name": "Leh-Ladakh"},
+        {"name": "Zostel Leh", "price_per_night": 900, "rating": 4.4, "hotel_type": "Hostel / Budget", "destination_name": "Leh-Ladakh"},
+    ],
 }
 
 def load_hotels():

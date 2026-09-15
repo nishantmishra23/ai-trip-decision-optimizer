@@ -29,7 +29,34 @@ SAMPLE_TRANSPORT = {
     "Paris": [
         {"mode": "International Flight", "icon": ":material/flight:", "cost": 45000, "duration_hours": 9.5, "comfort_rating": 4.8},
         {"mode": "TGV High-speed Train", "icon": ":material/train:", "cost": 8500, "duration_hours": 3.0, "comfort_rating": 4.9},
-    ]
+    ],
+    "Munnar": [
+        {"mode": "Flight to Kochi + Taxi", "icon": ":material/flight:", "cost": 6500, "duration_hours": 4.5, "comfort_rating": 4.6},
+        {"mode": "Train to Ernakulam + Scenic Bus", "icon": ":material/train:", "cost": 1600, "duration_hours": 12.0, "comfort_rating": 4.1},
+        {"mode": "Intercity AC Sleeper Bus", "icon": ":material/directions_bus:", "cost": 1200, "duration_hours": 14.0, "comfort_rating": 3.9},
+    ],
+    "Agra": [
+        {"mode": "Gatimaan Express (Fast Train)", "icon": ":material/train:", "cost": 900, "duration_hours": 1.7, "comfort_rating": 4.8},
+        {"mode": "Yamuna Expressway Cab", "icon": ":material/directions_car:", "cost": 3200, "duration_hours": 3.0, "comfort_rating": 4.5},
+        {"mode": "Express Bus", "icon": ":material/directions_bus:", "cost": 450, "duration_hours": 4.0, "comfort_rating": 4.0},
+    ],
+    "Bali": [
+        {"mode": "Connecting Flight (DPS)", "icon": ":material/flight:", "cost": 28000, "duration_hours": 8.0, "comfort_rating": 4.7},
+        {"mode": "Island Ferry / Fast Boat", "icon": ":material/directions_boat:", "cost": 1500, "duration_hours": 2.0, "comfort_rating": 4.2},
+    ],
+    "Rishikesh": [
+        {"mode": "Vande Bharat / Jan Shatabdi Train", "icon": ":material/train:", "cost": 850, "duration_hours": 4.5, "comfort_rating": 4.7},
+        {"mode": "Flight to Dehradun + Taxi", "icon": ":material/flight:", "cost": 4200, "duration_hours": 2.0, "comfort_rating": 4.6},
+        {"mode": "Overnight Volvo Bus", "icon": ":material/directions_bus:", "cost": 750, "duration_hours": 6.0, "comfort_rating": 4.1},
+    ],
+    "Andaman Islands": [
+        {"mode": "Direct Flight to Port Blair", "icon": ":material/flight:", "cost": 11000, "duration_hours": 2.5, "comfort_rating": 4.8},
+        {"mode": "Inter-Island Catamaran / Ferry", "icon": ":material/directions_boat:", "cost": 1800, "duration_hours": 2.0, "comfort_rating": 4.5},
+    ],
+    "Leh-Ladakh": [
+        {"mode": "Direct Mountain Flight (IXL)", "icon": ":material/flight:", "cost": 8500, "duration_hours": 1.5, "comfort_rating": 4.7},
+        {"mode": "Manali-Leh Highway Expedition (SUV)", "icon": ":material/directions_car:", "cost": 7000, "duration_hours": 16.0, "comfort_rating": 4.5},
+    ],
 }
 
 # Hero Header Banner
