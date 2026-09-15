@@ -1,13 +1,13 @@
 """
 AI Trip Decision Optimizer — Main Entry Point
-Handles multi-page navigation, sidebar branding, DB status, and session state.
+Streamlined navigation, enhanced sidebar typography, and state-of-the-art AI features.
 """
 import streamlit as st
 from auth.auth import init_session
 
 st.set_page_config(
     page_title="AI Trip Decision Optimizer",
-    page_icon=":material/flight:",
+    page_icon="✈️",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -15,97 +15,104 @@ st.set_page_config(
 # Initialize Session State
 init_session()
 
-
-@st.cache_data(ttl=30)
-def _check_db() -> bool:
-    """Cached DB health check (refreshes every 30 s)."""
-    try:
-        from database.connection import db_available
-        return db_available()
-    except Exception:
-        return False
-
-
-def _sidebar_db_status():
-    """Render a compact DB status indicator in the sidebar."""
-    is_up = _check_db()
-    if is_up:
-        st.sidebar.success("MySQL connected", icon=":material/cloud_done:")
-    else:
-        st.sidebar.caption(":material/cloud_off: Running in sample-data mode")
+# ── Sidebar Styling: Larger text, vibrant branding ─────────────────────────────
+st.markdown(
+    """
+    <style>
+    /* Make sidebar navigation text noticeably larger and bolder */
+    [data-testid="stSidebarNav"] span {
+        font-size: 1.08rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.2px;
+    }
+    [data-testid="stSidebarNav"] a {
+        padding-top: 0.55rem !important;
+        padding-bottom: 0.55rem !important;
+        border-radius: 8px !important;
+        transition: all 0.2s ease-in-out;
+    }
+    [data-testid="stSidebarNav"] a:hover {
+        background-color: rgba(99, 102, 241, 0.08) !important;
+        transform: translateX(3px);
+    }
+    [data-testid="stSidebarNavSeparator"] {
+        font-weight: 800 !important;
+        font-size: 0.92rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        color: #6366f1 !important;
+        margin-top: 1rem !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 
 def build_navigation():
-    logged_in = st.session_state.get("logged_in", False)
-    user = st.session_state.get("user", {}) or {}
-    is_admin = user.get("role", "") == "ADMIN"
-
+    """Build clean, focused navigation for student & traveler planning."""
     pages = {
-        "Main": [
-            st.Page("app_pages/home.py", title="Home", icon=":material/home:"),
-            st.Page("app_pages/login.py", title="Account", icon=":material/person:"),
+        "Explore India": [
+            st.Page("app_pages/home.py", title="Home Hub", icon=":material/home:"),
+            st.Page("app_pages/all_states_explorer.py", title="All 28 States & Places", icon=":material/explore:"),
         ],
-        "Trip Planning": [
-            st.Page("app_pages/trip_planner.py", title="Trip planner", icon=":material/map:"),
-            st.Page("app_pages/budget_optimizer.py", title="Budget optimizer", icon=":material/calculate:"),
-            st.Page("app_pages/ai_itinerary.py", title="AI itinerary", icon=":material/calendar_month:"),
-            st.Page("app_pages/ai_trip_optimizer.py", title="Multi-factor optimizer", icon=":material/auto_awesome:"),
+        "AI Planner": [
+            st.Page("app_pages/trip_planner.py", title="Smart Trip Planner", icon=":material/map:"),
+            st.Page("app_pages/ai_itinerary.py", title="AI Itinerary (Gemini)", icon=":material/auto_awesome:"),
+            st.Page("app_pages/budget_optimizer.py", title="Budget Optimizer", icon=":material/calculate:"),
         ],
-        "Discover & Compare": [
-            st.Page("app_pages/destination_discovery.py", title="Destination discovery", icon=":material/explore:"),
-            st.Page("app_pages/ai_recommendations.py", title="AI recommendations", icon=":material/psychology:"),
-            st.Page("app_pages/destination_comparison.py", title="Compare destinations", icon=":material/compare:"),
+        "Stays & Dining": [
+            st.Page("app_pages/hotel_recommendations.py", title="Hotels & Stays", icon=":material/hotel:"),
+            st.Page("app_pages/restaurant_recommendations.py", title="Food & Dining", icon=":material/restaurant:"),
+            st.Page("app_pages/activity_recommendations.py", title="Activities & Tours", icon=":material/hiking:"),
         ],
-        "Stays & Experiences": [
-            st.Page("app_pages/hotel_recommendations.py", title="Hotels & resorts", icon=":material/hotel:"),
-            st.Page("app_pages/restaurant_recommendations.py", title="Restaurants & dining", icon=":material/restaurant:"),
-            st.Page("app_pages/activity_recommendations.py", title="Activities & tours", icon=":material/hiking:"),
+        "Live Weather": [
+            st.Page("app_pages/weather_intelligence.py", title="Weather Intelligence", icon=":material/wb_sunny:"),
         ],
-        "Travel Intelligence": [
-            st.Page("app_pages/weather_intelligence.py", title="Weather intelligence", icon=":material/wb_sunny:"),
-            st.Page("app_pages/transportation_analysis.py", title="Transport & routes", icon=":material/train:"),
-        ],
-        "My Travels": [
-            st.Page("app_pages/saved_trips.py", title="Saved itineraries", icon=":material/bookmark:"),
-            st.Page("app_pages/trip_history.py", title="Travel history", icon=":material/history:"),
-            st.Page("app_pages/trip_summary.py", title="Trip summary", icon=":material/summarize:"),
-        ],
-        "Analytics": [
-            st.Page("app_pages/analytics.py", title="Platform analytics", icon=":material/bar_chart:"),
+        "My Account": [
+            st.Page("app_pages/saved_trips.py", title="Saved Itineraries", icon=":material/bookmark:"),
+            st.Page("app_pages/login.py", title="Account & Login", icon=":material/account_circle:"),
         ],
     }
-
-    if is_admin:
-        pages["Analytics"].append(
-            st.Page(
-                "app_pages/admin_dashboard.py",
-                title="Admin dashboard",
-                icon=":material/admin_panel_settings:",
-            )
-        )
-
     return pages
 
 
-# ── Sidebar Branding & Controls ────────────────────────────────────────────────
+# ── Sidebar Branding ───────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("### :material/flight: AI Trip Optimizer")
-    st.caption("Intelligent multi-factor travel planning platform")
+    st.markdown(
+        """
+        <div style="padding: 10px 0 6px 0;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 32px;">✈️</span>
+                <div>
+                    <div style="font-size: 1.35rem; font-weight: 800; line-height: 1.2; background: linear-gradient(135deg, #6366f1, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        Trip Optimizer
+                    </div>
+                    <div style="font-size: 0.78rem; font-weight: 600; color: #64748b; letter-spacing: 0.5px;">
+                        AI • 28 STATES • WEATHER
+                    </div>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
     st.divider()
 
-    # Auth status
+    # User Profile / Auth Status
     if st.session_state.get("logged_in"):
         user = st.session_state.get("user", {}) or {}
-        st.caption(f":material/person: Signed in as **{user.get('name', 'User')}**")
-        if st.button("Sign out", icon=":material/logout:", key="global_logout"):
+        st.markdown(f"🎓 **{user.get('name', 'Student')}**")
+        st.caption(f"`{user.get('email', '')}`")
+        if st.button("Sign out", icon=":material/logout:", key="global_logout", use_container_width=True):
             from auth.auth import logout
             logout()
             st.rerun()
     else:
-        st.caption(":material/person_outline: Guest user")
+        st.markdown("👋 **Welcome, Guest!**")
+        st.caption("Sign in to save itineraries & get AI perks.")
 
     st.divider()
-    _sidebar_db_status()
 
 # ── Navigation Execution ───────────────────────────────────────────────────────
 pages = build_navigation()
