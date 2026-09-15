@@ -3,6 +3,15 @@ AI Itinerary Generator for AI Trip Decision Optimizer.
 Powered by Google Gemini 3.6 Flash. Generates structured day-by-day student travel itineraries
 across all 28 Indian states with realistic cost breakdowns.
 """
+import os
+import sys
+
+# Ensure project root is in sys.path
+_current_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.getcwd()
+ROOT_DIR = os.path.dirname(_current_dir) if "app_pages" in _current_dir else _current_dir
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
 import streamlit as st
 from datetime import date, timedelta
 import pandas as pd

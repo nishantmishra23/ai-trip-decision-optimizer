@@ -1,19 +1,50 @@
 """
 Authentication logic for AI Trip Decision Optimizer.
 Handles registration, login, Google authentication, and session management.
+Supports both bcrypt and standard hashlib fallback.
 """
-import bcrypt
+import os
+import sys
+import hashlib
+
+# Ensure project root is in sys.path
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 import streamlit as st
+
+try:
+    import bcrypt
+    HAS_BCRYPT = True
+except ImportError:
+    bcrypt = None
+    HAS_BCRYPT = False
+
 from database.queries import get_user_by_email, create_user
 
 
 def hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    """Hash password using bcrypt if available, else SHA-256 with salt."""
+    if HAS_BCRYPT and bcrypt:
+        try:
+            return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+        except Exception:
+            pass
+    salt = "ai_trip_optimizer_salt"
+    return "sha256$" + hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
 
 
 def verify_password(password: str, hashed: str) -> bool:
+    """Verify password against bcrypt or sha256 hash."""
     try:
-        return bcrypt.checkpw(password.encode("utf-8"), hashed.encode("utf-8"))
+        if hashed.startswith("sha256$"):
+            salt = "ai_trip_optimizer_salt"
+            expected = "sha256$" + hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
+            return hashed == expected
+        if HAS_BCRYPT and bcrypt:
+            return bcrypt.checkpw(password.encode("utf-8"), hashed.encode("utf-8"))
+        return False
     except Exception:
         return False
 

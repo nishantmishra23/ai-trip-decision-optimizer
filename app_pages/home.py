@@ -2,6 +2,15 @@
 Home / Main Hub for AI Trip Decision Optimizer.
 Vibrant student-friendly travel hub featuring all 28 states, AI planning, and live weather.
 """
+import os
+import sys
+
+# Ensure project root is in sys.path
+_current_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.getcwd()
+ROOT_DIR = os.path.dirname(_current_dir) if "app_pages" in _current_dir else _current_dir
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
 import streamlit as st
 from auth.auth import init_session
 from data.india_states_places import ALL_28_STATES, get_all_states, get_google_maps_url

@@ -2,6 +2,15 @@
 Saved Trips for AI Trip Decision Optimizer.
 Displays saved trips from database and current active session.
 """
+import os
+import sys
+
+# Ensure project root is in sys.path
+_current_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.getcwd()
+ROOT_DIR = os.path.dirname(_current_dir) if "app_pages" in _current_dir else _current_dir
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
 import streamlit as st
 from auth.auth import init_session
 from utils.helpers import format_currency
