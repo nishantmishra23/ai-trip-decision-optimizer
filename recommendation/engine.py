@@ -114,6 +114,7 @@ def score_destination(
     preferred_activities: List[str],
     preferred_season: str,
     travel_style: str,
+    user_history: List[Dict] = None,
 ) -> Dict[str, Any]:
     """
     Score a destination 0-100 and return explanation bullets.
@@ -144,9 +145,25 @@ def score_destination(
         + p_score * 0.15
         + eff_score * 0.10
     )
-
+    
     # Build explanation
     reasons = []
+    
+    # Apply Personalization Boost if history exists
+    if user_history and category:
+        past_categories = []
+        for past_trip in user_history:
+            past_name = past_trip.get("destination_name", "")
+            # Find category of past trip
+            for s_dest in SAMPLE_DESTINATIONS:
+                if s_dest["name"] == past_name:
+                    past_categories.append(s_dest["category"])
+                    break
+                    
+        if past_categories and category in past_categories:
+            total = min(100.0, total + 8.0) # 8 point personalization boost
+            reasons.append(f"✨ Personalised: Based on your previous trips, you love {category} destinations!")
+
     if b_score >= 80:
         reasons.append(f"Great budget fit — estimated ₹{daily_cost:,.0f}/day within your ₹{budget_per_day:,.0f}/day budget")
     elif b_score >= 50:
@@ -191,6 +208,7 @@ def get_recommendations(
     preferred_season: str,
     travel_style: str,
     top_n: int = 5,
+    user_history: List[Dict] = None,
 ) -> List[Dict]:
     """Score all destinations and return top N sorted by score."""
     if not destinations:
@@ -199,7 +217,7 @@ def get_recommendations(
     budget_per_day = budget / max(duration_days, 1)
     scored = [
         score_destination(d, budget_per_day, duration_days,
-                          preferred_activities, preferred_season, travel_style)
+                          preferred_activities, preferred_season, travel_style, user_history)
         for d in destinations
     ]
     scored.sort(key=lambda x: x["score"], reverse=True)

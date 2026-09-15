@@ -10,6 +10,14 @@ from utils.components import render_activity_card
 
 inject_theme_css()
 
+# Hero Header Banner
+st.markdown("""
+<div class="app-hero-banner">
+    <div class="app-hero-title">🧗 Activities & Tours</div>
+    <div class="app-hero-subtitle">Discover thrilling adventure sports, cultural tours, water sports, and wellness retreats</div>
+</div>
+""", unsafe_allow_html=True)
+
 SAMPLE_ACTIVITIES = {
     "Goa": [
         {"name": "Scuba Diving at Grande Island", "category": "Water Sports", "price": 3500, "duration_hrs": 4, "rating": 4.8, "destination_name": "Goa"},
@@ -45,9 +53,6 @@ def load_activities():
         all_act.extend(a_list)
     return all_act
 
-st.title(":material/hiking: Activities & Experiences", anchor=False)
-st.caption("Discover thrilling adventure sports, cultural tours, water sports, and wellness retreats.")
-
 activities = load_activities()
 
 with st.container(border=True):
@@ -82,6 +87,6 @@ else:
 if filtered:
     st.subheader(":material/bar_chart: Activities Breakdown by Category", anchor=False)
     df_act = pd.DataFrame(filtered)
-    fig = px.bar(df_act, x="category", y="price", color="category", text_auto="₹%.0f")
+    fig = px.bar(df_act, x="category", y="price", color="category", text_auto=True)
     plotly_theme(fig)
-    st.plotly_chart(fig)
+    st.plotly_chart(fig, key="act_price_chart")

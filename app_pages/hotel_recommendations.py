@@ -4,11 +4,19 @@ Hotel Recommendations page for AI Trip Decision Optimizer.
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from utils.helpers import format_currency, plotly_theme
+from utils.helpers import plotly_theme
 from utils.theme import inject_theme_css
 from utils.components import render_hotel_card
 
 inject_theme_css()
+
+# Hero Header Banner
+st.markdown("""
+<div class="app-hero-banner">
+    <div class="app-hero-title">🏨 Hotels & Resorts</div>
+    <div class="app-hero-subtitle">Find verified resorts, luxury stays, boutique hotels, and budget stays tailored to your destination</div>
+</div>
+""", unsafe_allow_html=True)
 
 SAMPLE_HOTELS = {
     "Goa": [
@@ -52,9 +60,6 @@ def load_hotels():
         all_h.extend(h_list)
     return all_h
 
-st.title(":material/hotel: Hotel & Accommodations", anchor=False)
-st.caption("Find verified resorts, luxury stays, boutique hotels, and budget stays tailored to your destination.")
-
 hotels = load_hotels()
 
 with st.container(border=True):
@@ -91,6 +96,6 @@ if filtered:
     st.subheader(":material/bar_chart: Average Price by Property Type", anchor=False)
     df_h = pd.DataFrame(filtered)
     avg_df = df_h.groupby("hotel_type")["price_per_night"].mean().reset_index()
-    fig = px.bar(avg_df, x="hotel_type", y="price_per_night", color="hotel_type", text_auto="₹%.0f")
+    fig = px.bar(avg_df, x="hotel_type", y="price_per_night", color="hotel_type", text_auto=True)
     plotly_theme(fig)
-    st.plotly_chart(fig)
+    st.plotly_chart(fig, key="hotel_price_chart")

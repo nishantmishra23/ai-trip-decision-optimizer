@@ -7,12 +7,16 @@ import plotly.express as px
 from recommendation.engine import get_recommendations, SAMPLE_DESTINATIONS
 from utils.helpers import format_currency, plotly_theme
 from utils.theme import inject_theme_css
-from utils.images import get_destination_image
 
 inject_theme_css()
 
-st.title(":material/auto_awesome: AI Multi-Factor Trip Optimizer", anchor=False)
-st.caption("Advanced AI engine evaluating budget constraints, season suitability, activities, and popularity to find your optimal trip.")
+# Hero Header Banner
+st.markdown("""
+<div class="app-hero-banner">
+    <div class="app-hero-title">🤖 Multi-Factor Trip Optimizer</div>
+    <div class="app-hero-subtitle">Evaluate budget constraints, season suitability, activities, and popularity with AI scoring</div>
+</div>
+""", unsafe_allow_html=True)
 
 with st.container(border=True):
     st.subheader(":material/tune: Optimization Constraints", anchor=False)
@@ -42,18 +46,14 @@ st.subheader(":material/workspace_premium: Ranked Destination Results", anchor=F
 for idx, r in enumerate(recs):
     d = r["destination"]
     with st.container(border=True):
-        col_img, col_info, col_score = st.columns([1.2, 2.5, 1.3], gap="medium")
+        col_info, col_score = st.columns([2.8, 1.2], gap="medium")
         
-        with col_img:
-            img_url = get_destination_image(d["name"], d.get("category"))
-            st.image(img_url, caption=None)
-            
         with col_info:
             st.markdown(f"### Rank #{idx+1}: {d['name']}")
-            st.caption(f":material/location_on: {d['country']} • Category: **{d.get('category', 'Travel')}**")
+            st.caption(f":material/location_on: **{d['country']}** • Category: **{d.get('category', 'Travel')}**")
             st.write(d.get("description", ""))
             
-            st.markdown("**Key Reasons:**")
+            st.markdown("**Key Recommendation Factors:**")
             for reason in r["reasons"]:
                 st.caption(f"• {reason}")
                 
@@ -67,4 +67,4 @@ for idx, r in enumerate(recs):
             })
             fig_sub = px.bar(sub_df, x="Score", y="Factor", orientation="h", color="Factor", text_auto=True)
             plotly_theme(fig_sub)
-            st.plotly_chart(fig_sub)
+            st.plotly_chart(fig_sub, key=f"opt_sub_chart_{idx}")

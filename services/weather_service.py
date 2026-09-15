@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-WEATHER_API_KEY = os.getenv("WEATHER_API_KEY", "")
 BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
 
 # Static weather data per destination (fallback)
@@ -40,19 +39,44 @@ STATIC_WEATHER = {
 }
 
 
+def _get_static(city: str, source_label: str = "sample") -> dict:
+    """Return static fallback weather for a city, or generic data if city not found."""
+    for key in STATIC_WEATHER:
+        if key.lower() in city.lower() or city.lower() in key.lower():
+            data = STATIC_WEATHER[key].copy()
+            data["source"] = source_label
+            return data
+    # Generic fallback — unknown city
+    return {
+        "temp": 25, "feels_like": 27, "humidity": 60,
+        "description": "Partly cloudy", "wind_speed": 12,
+        "condition": "Partly Cloudy", "rain_chance": 20,
+        "best_months": "Varies by season", "source": source_label,
+    }
+
+
 def get_weather(city: str) -> dict:
     """
-    Fetch weather for a city.
-    Returns live data from OpenWeatherMap if API key available, else static data.
+    Fetch current weather for a city.
+
+    Priority:
+      1. Live data from OpenWeatherMap (if WEATHER_API_KEY is set and reachable).
+      2. Curated static data for known destinations.
+      3. Generic fallback data.
+
+    Never raises — always returns a dict. Never exposes the API key.
     """
-    # Try live API
-    if WEATHER_API_KEY:
+    # Read key fresh each call so that late .env loading is handled correctly
+    api_key = os.getenv("WEATHER_API_KEY", "").strip()
+
+    if api_key:
         try:
             resp = requests.get(
                 BASE_URL,
-                params={"q": city, "appid": WEATHER_API_KEY, "units": "metric"},
+                params={"q": city, "appid": api_key, "units": "metric"},
                 timeout=5,
             )
+
             if resp.status_code == 200:
                 data = resp.json()
                 return {
@@ -60,26 +84,30 @@ def get_weather(city: str) -> dict:
                     "feels_like": round(data["main"]["feels_like"]),
                     "humidity": data["main"]["humidity"],
                     "description": data["weather"][0]["description"].title(),
-                    "wind_speed": round(data["wind"]["speed"] * 3.6),  # m/s -> km/h
+                    "wind_speed": round(data["wind"]["speed"] * 3.6),  # m/s → km/h
                     "condition": data["weather"][0]["main"],
                     "rain_chance": data.get("clouds", {}).get("all", 0),
                     "best_months": STATIC_WEATHER.get(city, {}).get("best_months", "Varies"),
                     "source": "live",
                 }
+
+            if resp.status_code == 401:
+                # Key exists but not yet activated (takes up to 2 hours after signup)
+                return _get_static(city, source_label="sample (key activating)")
+
+            if resp.status_code == 404:
+                # City name not recognised by OWM — use our static data
+                return _get_static(city, source_label="sample (city not found)")
+
+            # Any other HTTP error (429 rate limit, 5xx server error, etc.)
+            return _get_static(city, source_label="sample (api error)")
+
+        except requests.exceptions.Timeout:
+            return _get_static(city, source_label="sample (timeout)")
+        except requests.exceptions.ConnectionError:
+            return _get_static(city, source_label="sample (offline)")
         except Exception:
-            pass
+            return _get_static(city, source_label="sample (error)")
 
-    # Fallback to static data
-    for key in STATIC_WEATHER:
-        if key.lower() in city.lower() or city.lower() in key.lower():
-            data = STATIC_WEATHER[key].copy()
-            data["source"] = "sample"
-            return data
-
-    # Generic fallback
-    return {
-        "temp": 25, "feels_like": 27, "humidity": 60,
-        "description": "Partly cloudy", "wind_speed": 12,
-        "condition": "Partly Cloudy", "rain_chance": 20,
-        "best_months": "Varies by season", "source": "sample",
-    }
+    # No key configured — use static data silently
+    return _get_static(city, source_label="sample")

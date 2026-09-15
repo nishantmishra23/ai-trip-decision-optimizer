@@ -1,1 +1,10 @@
-# Streamlit config file
+[client]
+toolbarMode = "minimal"
+showErrorDetails = false
+
+[theme]
+primaryColor = "#0EA5E9"
+backgroundColor = "#090D16"
+secondaryBackgroundColor = "#131B2E"
+textColor = "#F8FAFC"
+font = "sans serif"

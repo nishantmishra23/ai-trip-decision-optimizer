@@ -7,12 +7,16 @@ import plotly.express as px
 import plotly.graph_objects as go
 from utils.helpers import get_destinations_with_fallback, format_currency, plotly_theme
 from utils.theme import inject_theme_css
-from utils.images import get_destination_image
 
 inject_theme_css()
 
-st.title(":material/compare: Destination Comparison", anchor=False)
-st.caption("Compare costs, ratings, popularity, and amenities side-by-side to make the optimal choice.")
+# Hero Header Banner
+st.markdown("""
+<div class="app-hero-banner">
+    <div class="app-hero-title">⚖️ Destination Comparison</div>
+    <div class="app-hero-subtitle">Compare costs, ratings, popularity, and key features side-by-side to choose your ideal destination</div>
+</div>
+""", unsafe_allow_html=True)
 
 dests = get_destinations_with_fallback()
 dest_dict = {d["name"]: d for d in dests}
@@ -36,10 +40,8 @@ cols = st.columns(len(selected_dests))
 for idx, d in enumerate(selected_dests):
     with cols[idx]:
         with st.container(border=True):
-            img_url = get_destination_image(d.get("name", ""), d.get("category"))
-            st.image(img_url, caption=None)
-            st.markdown(f"### {d.get('name')}")
-            st.caption(f":material/location_on: {d.get('country')} • {d.get('category', 'Travel')}")
+            st.markdown(f"### 📍 {d.get('name')}")
+            st.caption(f"{d.get('country')} • {d.get('category', 'Travel')}")
             
             cost = d.get("average_daily_cost", d.get("avg_daily_cost", 0))
             st.metric("Avg Daily Cost", format_currency(cost))
@@ -81,7 +83,7 @@ with c1:
         text_auto=True, color_discrete_sequence=px.colors.qualitative.Bold
     )
     plotly_theme(fig_bar)
-    st.plotly_chart(fig_bar)
+    st.plotly_chart(fig_bar, key="comp_daily_cost_chart")
 
 with c2:
     st.markdown("#### Overall Rating & Popularity Radar")
@@ -102,4 +104,4 @@ with c2:
         ))
         
     plotly_theme(fig_radar)
-    st.plotly_chart(fig_radar)
+    st.plotly_chart(fig_radar, key="comp_radar_chart")

@@ -7,20 +7,18 @@ from utils.helpers import format_currency, rating_stars
 from utils.images import get_destination_image, get_hotel_image, get_restaurant_image, get_activity_image
 
 
-def render_hero_banner(title: str, subtitle: str, badge: str = "AI-POWERED PLATFORM", image_url: str = None):
-    """Render a gradient hero banner section with travel imagery."""
-    if image_url:
-        st.image(image_url, caption=None)
-    
-    with st.container(border=True):
-        if badge:
-            st.caption(f":material/auto_awesome: **{badge}**")
-        st.markdown(f"# {title}")
-        st.caption(subtitle)
+def render_hero_banner(title: str, subtitle: str, badge: str = "AI-POWERED PLATFORM"):
+    """Render a gradient hero banner section."""
+    st.markdown(f"""
+    <div class="app-hero-banner">
+        <div class="app-hero-title">{title}</div>
+        <div class="app-hero-subtitle">{subtitle}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 
 def render_destination_card(dest: dict, show_details: bool = True):
-    """Render a standardized destination card with imagery, ratings, cost, and tags."""
+    """Render a standardized destination card with ratings, cost, and tags."""
     name = dest.get("name", "Destination")
     country = dest.get("country", "")
     category = dest.get("category", "Travel")
@@ -29,12 +27,9 @@ def render_destination_card(dest: dict, show_details: bool = True):
     popularity = dest.get("popularity_score", 8.5)
     desc = dest.get("description", "")
 
-    img_url = get_destination_image(name, category)
-
     with st.container(border=True):
-        st.image(img_url, caption=None)
-        st.markdown(f"### {name}")
-        st.caption(f":material/location_on: {country} • **{category}**")
+        st.markdown(f"### 📍 {name}")
+        st.caption(f"{country} • **{category}**")
 
         col_cost, col_rate = st.columns(2)
         with col_cost:
@@ -51,6 +46,11 @@ def render_destination_card(dest: dict, show_details: bool = True):
                 st.write(f"• **Popularity Index:** {popularity} / 10")
                 st.write(f"• **Best Season:** {dest.get('season', 'Oct-Mar')}")
                 st.write(f"• **Overview:** {desc}")
+                
+        # Connect Journey: Plan Trip Button
+        if st.button("Plan this trip", key=f"comp_plan_{name}", type="primary"):
+            st.session_state["planner_prefill"] = name
+            st.switch_page("app_pages/trip_planner.py")
 
 
 def render_hotel_card(hotel: dict):
@@ -61,11 +61,8 @@ def render_hotel_card(hotel: dict):
     price = hotel.get("price_per_night", 0)
     rating = hotel.get("rating", 4.5)
 
-    img_url = get_hotel_image(name, h_type)
-
     with st.container(border=True):
-        st.image(img_url, caption=None)
-        st.markdown(f"### {name}")
+        st.markdown(f"### 🏨 {name}")
         st.caption(f":material/location_on: {dest_name} • **{h_type}**")
 
         c_p, c_r = st.columns(2)
@@ -85,11 +82,8 @@ def render_restaurant_card(restaurant: dict):
     cost = restaurant.get("average_cost", 0)
     rating = restaurant.get("rating", 4.5)
 
-    img_url = get_restaurant_image(name, cuisine)
-
     with st.container(border=True):
-        st.image(img_url, caption=None)
-        st.markdown(f"### {name}")
+        st.markdown(f"### 🍽️ {name}")
         st.caption(f":material/location_on: {dest_name} • **{cuisine}**")
 
         c_p, c_r = st.columns(2)
@@ -108,11 +102,8 @@ def render_activity_card(activity: dict):
     duration = activity.get("duration_hrs", 2)
     rating = activity.get("rating", 4.5)
 
-    img_url = get_activity_image(name, category)
-
     with st.container(border=True):
-        st.image(img_url, caption=None)
-        st.markdown(f"### {name}")
+        st.markdown(f"### 🎯 {name}")
         st.caption(f":material/location_on: {dest_name} • **{category}**")
 
         c_p, c_r = st.columns(2)

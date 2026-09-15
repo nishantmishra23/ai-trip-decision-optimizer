@@ -26,8 +26,13 @@ if not st.session_state.get("logged_in") or user.get("role") != "ADMIN":
     st.info("Log in with an Admin account or set user role to ADMIN.", icon=":material/info:")
     st.stop()
 
-st.title(":material/admin_panel_settings: System Administration Dashboard", anchor=False)
-st.caption("Control panel for managing database records, reviewing registered accounts, and system status.")
+# Hero Header Banner
+st.markdown("""
+<div class="app-hero-banner">
+    <div class="app-hero-title">🛡️ System Administration Dashboard</div>
+    <div class="app-hero-subtitle">Control panel for managing database records, reviewing registered accounts, and system health</div>
+</div>
+""", unsafe_allow_html=True)
 
 # Platform Metrics
 m1, m2, m3, m4 = st.columns(4)
@@ -87,6 +92,6 @@ with tab2:
 
 with tab3:
     st.subheader("Environment & System Diagnostics", anchor=False)
-    env_keys = ["DB_HOST", "DB_USER", "DB_NAME", "DB_PORT", "WEATHER_API_KEY"]
+    env_keys = ["DB_HOST", "DB_USER", "DB_NAME", "DB_PORT", "WEATHER_API_KEY", "GEMINI_API_KEY"]
     env_status = [{"Variable": k, "Status": "Configured" if os.getenv(k) else "Not set / Default"} for k in env_keys]
     st.dataframe(pd.DataFrame(env_status))

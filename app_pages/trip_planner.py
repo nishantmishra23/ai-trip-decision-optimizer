@@ -7,16 +7,19 @@ import pandas as pd
 import plotly.express as px
 from auth.auth import init_session
 from utils.helpers import get_destinations_with_fallback, format_currency, plotly_theme
-from utils.images import HERO_IMAGES, get_destination_image
 from utils.theme import inject_theme_css
 from recommendation.engine import get_recommendations
 
 init_session()
 inject_theme_css()
 
-st.image(HERO_IMAGES["Planner"], caption=None)
-st.title("Interactive Trip Planner", anchor=False)
-st.caption("Customise your dates, budget, and travel preferences to generate a detailed itinerary breakdown.")
+# Hero Banner
+st.markdown("""
+<div class="app-hero-banner">
+    <div class="app-hero-title">🗺️ Interactive Trip Planner</div>
+    <div class="app-hero-subtitle">Customise dates, budget, and travel preferences to generate a detailed itinerary breakdown</div>
+</div>
+""", unsafe_allow_html=True)
 
 dests = get_destinations_with_fallback()
 dest_names = [d["name"] for d in dests]
@@ -27,7 +30,13 @@ with st.container(border=True):
         c1, c2 = st.columns(2, gap="medium")
         with c1:
             origin = st.text_input("Starting location", value="Delhi", placeholder="e.g. Delhi, Mumbai, New York")
-            destination = st.selectbox("Destination", dest_names)
+            
+            # Use prefill if it exists
+            prefill_idx = 0
+            if "planner_prefill" in st.session_state and st.session_state["planner_prefill"] in dest_names:
+                prefill_idx = dest_names.index(st.session_state["planner_prefill"])
+                
+            destination = st.selectbox("Destination", dest_names, index=prefill_idx)
             travelers = st.number_input("Number of travellers", min_value=1, max_value=20, value=2)
             budget = st.number_input("Total budget (₹)", min_value=1000, max_value=1000000, value=35000, step=1000)
 
@@ -60,34 +69,30 @@ if submitted:
         st.stop()
 
     selected_dest = next((d for d in dests if d["name"] == destination), dests[0])
-    img_url = get_destination_image(selected_dest["name"], selected_dest.get("category"))
 
     st.markdown("---")
-    st.subheader(f":material/flight_takeoff: Trip Plan: {origin} ➔ {destination}", anchor=False)
+    st.subheader(f":material/flight_takeoff: Trip Plan Summary: {origin} ➔ {destination}", anchor=False)
 
-    col_img, col_metrics = st.columns([1, 2], gap="medium")
-    with col_img:
-        st.image(img_url, caption=f"{selected_dest['name']}, {selected_dest['country']}")
-
-    with col_metrics:
-        m1, m2 = st.columns(2)
-        with m1:
-            with st.container(border=True):
-                st.metric("Duration", f"{duration} days")
-            with st.container(border=True):
-                st.metric("Total Budget", format_currency(budget))
-        with m2:
-            with st.container(border=True):
-                st.metric("Travellers", str(travelers))
-            with st.container(border=True):
-                daily = selected_dest.get("average_daily_cost", selected_dest.get("avg_daily_cost", 2500))
-                est_cost = daily * duration * travelers
-                delta_val = budget - est_cost
-                st.metric(
-                    "Estimated Total Cost", 
-                    format_currency(est_cost),
-                    delta=f"{format_currency(abs(delta_val))} {'under' if delta_val >= 0 else 'over'} budget"
-                )
+    m1, m2, m3, m4 = st.columns(4)
+    with m1:
+        with st.container(border=True):
+            st.metric("Duration", f"{duration} days")
+    with m2:
+        with st.container(border=True):
+            st.metric("Travellers", str(travelers))
+    with m3:
+        with st.container(border=True):
+            st.metric("Total Budget", format_currency(budget))
+    with m4:
+        with st.container(border=True):
+            daily = selected_dest.get("average_daily_cost", selected_dest.get("avg_daily_cost", 2500))
+            est_cost = daily * duration * travelers
+            delta_val = budget - est_cost
+            st.metric(
+                "Estimated Total Cost", 
+                format_currency(est_cost),
+                delta=f"{format_currency(abs(delta_val))} {'under' if delta_val >= 0 else 'over'} budget"
+            )
 
     # Financial Breakdown
     st.subheader(":material/pie_chart: Estimated Budget Breakdown", anchor=False)
@@ -108,7 +113,7 @@ if submitted:
         color_discrete_sequence=["#0EA5E9", "#10B981", "#F59E0B", "#8B5CF6", "#64748B"]
     )
     plotly_theme(fig)
-    st.plotly_chart(fig)
+    st.plotly_chart(fig, key="trip_planner_pie_chart")
 
     # AI Top Recommended Alternatives
     st.subheader(":material/auto_awesome: AI Recommended Alternatives", anchor=False)
@@ -119,10 +124,8 @@ if submitted:
         d = r["destination"]
         with r_cols[idx]:
             with st.container(border=True):
-                r_img = get_destination_image(d["name"], d.get("category"))
-                st.image(r_img, caption=None)
-                st.markdown(f"**Rank #{idx+1}: {d['name']}**")
-                st.caption(f"{d['country']} • Score: {r['score']}/100")
+                st.markdown(f"#### Rank #{idx+1}: {d['name']}")
+                st.caption(f"📍 {d['country']} • Match Score: **{r['score']}/100**")
                 for reason in r["reasons"][:2]:
                     st.caption(f"• {reason}")
 

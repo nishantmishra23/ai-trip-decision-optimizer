@@ -10,6 +10,14 @@ from utils.theme import inject_theme_css
 
 inject_theme_css()
 
+# Hero Header Banner
+st.markdown("""
+<div class="app-hero-banner">
+    <div class="app-hero-title">📊 Analytics & Platform Insights</div>
+    <div class="app-hero-subtitle">Comprehensive data-driven breakdown of global destinations, pricing trends, and user ratings</div>
+</div>
+""", unsafe_allow_html=True)
+
 def load_destinations():
     try:
         from database.queries import get_all_destinations
@@ -20,14 +28,20 @@ def load_destinations():
         pass
     return SAMPLE_DESTINATIONS
 
-st.title(":material/bar_chart: Analytics & Destination Insights", anchor=False)
-st.caption("Comprehensive data-driven breakdown of global destinations, pricing trends, and ratings.")
-
 dests = load_destinations()
 df_dest = pd.DataFrame(dests)
 
 if "average_daily_cost" not in df_dest.columns and "avg_daily_cost" in df_dest.columns:
     df_dest["average_daily_cost"] = df_dest["avg_daily_cost"]
+
+if "popularity_score" in df_dest.columns:
+    df_dest["popularity_score"] = pd.to_numeric(df_dest["popularity_score"], errors="coerce").fillna(7.0)
+
+if "rating" in df_dest.columns:
+    df_dest["rating"] = pd.to_numeric(df_dest["rating"], errors="coerce").fillna(4.5)
+
+if "average_daily_cost" in df_dest.columns:
+    df_dest["average_daily_cost"] = pd.to_numeric(df_dest["average_daily_cost"], errors="coerce").fillna(3000.0)
 
 # Key Data Metrics
 st.subheader(":material/monitoring: Platform Key Performance Indicators", anchor=False)
@@ -56,12 +70,16 @@ c1, c2 = st.columns(2, gap="medium")
 with c1:
     st.markdown("#### Daily Cost vs Rating Scatter Plot")
     fig_scatter = px.scatter(
-        df_dest, x="average_daily_cost", y="rating", text="name", color="country",
+        df_dest, 
+        x="average_daily_cost", 
+        y="rating", 
+        text="name", 
+        color="country",
         size="popularity_score" if "popularity_score" in df_dest else None,
         labels={"average_daily_cost": "Avg Daily Cost (₹)", "rating": "Rating (0-5)"}
     )
     plotly_theme(fig_scatter)
-    st.plotly_chart(fig_scatter)
+    st.plotly_chart(fig_scatter, key="analytics_scatter_chart")
 
 with c2:
     st.markdown("#### Destinations by Country")
@@ -69,7 +87,7 @@ with c2:
     country_counts.columns = ["Country", "Count"]
     fig_country = px.bar(country_counts, x="Country", y="Count", color="Country", text_auto=True)
     plotly_theme(fig_country)
-    st.plotly_chart(fig_country)
+    st.plotly_chart(fig_country, key="analytics_country_chart")
 
 # Destination Dataset Table
 st.subheader(":material/table_chart: Raw Destination Dataset", anchor=False)

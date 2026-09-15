@@ -11,8 +11,13 @@ from utils.theme import inject_theme_css
 init_session()
 inject_theme_css()
 
-st.title(":material/history: Travel History & Analytics", anchor=False)
-st.caption("Track your travel journey, total expenditure, visited destinations, and historical trip statistics.")
+# Hero Header Banner
+st.markdown("""
+<div class="app-hero-banner">
+    <div class="app-hero-title">📜 Travel History & Analytics</div>
+    <div class="app-hero-subtitle">Track your travel journey, total expenditure, visited destinations, and historical trip statistics</div>
+</div>
+""", unsafe_allow_html=True)
 
 if not st.session_state.get("logged_in"):
     with st.container(border=True):
@@ -60,6 +65,6 @@ else:
 
     # Charts
     st.subheader(":material/bar_chart: Historical Travel Spend per Trip", anchor=False)
-    fig_spend = px.bar(df_trips, x="destination_name", y="total_budget", color="destination_name", text_auto="₹%.0f")
+    fig_spend = px.bar(df_trips, x="destination_name", y="total_budget", color="destination_name", text_auto=True)
     plotly_theme(fig_spend)
-    st.plotly_chart(fig_spend)
+    st.plotly_chart(fig_spend, key="history_spend_chart")

@@ -10,6 +10,14 @@ from utils.components import render_restaurant_card
 
 inject_theme_css()
 
+# Hero Header Banner
+st.markdown("""
+<div class="app-hero-banner">
+    <div class="app-hero-title">🍽️ Restaurants & Dining</div>
+    <div class="app-hero-subtitle">Explore fine dining, local food shacks, traditional thalis, and iconic cafes across travel destinations</div>
+</div>
+""", unsafe_allow_html=True)
+
 SAMPLE_RESTAURANTS = {
     "Goa": [
         {"name": "Thalassa", "cuisine": "Greek & Mediterranean", "average_cost": 2500, "rating": 4.7, "destination_name": "Goa"},
@@ -43,9 +51,6 @@ def load_restaurants():
     for dest, r_list in SAMPLE_RESTAURANTS.items():
         all_r.extend(r_list)
     return all_r
-
-st.title(":material/restaurant: Restaurants & Culinary Experiences", anchor=False)
-st.caption("Explore fine dining, local food shacks, traditional thalis, and iconic cafes across travel destinations.")
 
 restaurants = load_restaurants()
 
@@ -83,4 +88,4 @@ if filtered:
     df_r = pd.DataFrame(filtered)
     fig = px.pie(df_r, names="cuisine", hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel)
     plotly_theme(fig)
-    st.plotly_chart(fig)
+    st.plotly_chart(fig, key="rest_cuisine_chart")

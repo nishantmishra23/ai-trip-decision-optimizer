@@ -5,13 +5,17 @@ import streamlit as st
 from auth.auth import init_session
 from utils.helpers import format_currency
 from utils.theme import inject_theme_css
-from utils.images import get_destination_image
 
 init_session()
 inject_theme_css()
 
-st.title(":material/bookmark: Saved Trip Itineraries", anchor=False)
-st.caption("Access and manage your saved trip plans and customized travel itineraries.")
+# Hero Header Banner
+st.markdown("""
+<div class="app-hero-banner">
+    <div class="app-hero-title">🔖 Saved Trip Itineraries</div>
+    <div class="app-hero-subtitle">Access and manage your saved trip plans and customized travel itineraries</div>
+</div>
+""", unsafe_allow_html=True)
 
 if not st.session_state.get("logged_in"):
     with st.container(border=True):
@@ -43,10 +47,7 @@ else:
         
         with cols[idx % 3]:
             with st.container(border=True):
-                img_url = get_destination_image(dest_name)
-                st.image(img_url, caption=None)
-                
-                st.markdown(f"### {dest_name}")
+                st.markdown(f"### 📍 {dest_name}")
                 st.caption(f":material/calendar_month: {start_date} to {end_date}")
                 
                 st.metric("Total Budget", format_currency(budget))

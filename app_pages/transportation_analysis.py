@@ -6,7 +6,6 @@ import pandas as pd
 import plotly.express as px
 from utils.helpers import format_currency, plotly_theme
 from utils.theme import inject_theme_css
-from utils.images import get_destination_image
 from recommendation.engine import SAMPLE_DESTINATIONS
 
 inject_theme_css()
@@ -33,15 +32,19 @@ SAMPLE_TRANSPORT = {
     ]
 }
 
-st.title(":material/train: Transportation & Route Analysis", anchor=False)
-st.caption("Compare flights, express trains, intercity buses, and self-drive routes by cost, duration, and convenience.")
+# Hero Header Banner
+st.markdown("""
+<div class="app-hero-banner">
+    <div class="app-hero-title">🚆 Transportation & Route Analysis</div>
+    <div class="app-hero-subtitle">Compare flights, express trains, intercity buses, and self-drive routes by cost, duration, and convenience</div>
+</div>
+""", unsafe_allow_html=True)
 
 dest_names = [d["name"] for d in SAMPLE_DESTINATIONS]
-selected_dest = st.selectbox("Select Target Destination", dest_names)
 
-# Destination Cover Banner
-img_url = get_destination_image(selected_dest)
-st.image(img_url, caption=f"Transit Routes to {selected_dest}")
+with st.container(border=True):
+    st.subheader(":material/tune: Route Selection", anchor=False)
+    selected_dest = st.selectbox("Select Target Destination", dest_names)
 
 routes = SAMPLE_TRANSPORT.get(selected_dest, [
     {"mode": "Direct Flight", "icon": ":material/flight:", "cost": 6000, "duration_hours": 2.5, "comfort_rating": 4.7},
@@ -67,15 +70,15 @@ df_t = pd.DataFrame(routes)
 c1, c2 = st.columns(2, gap="medium")
 with c1:
     st.markdown("#### Travel Cost by Mode")
-    fig_cost = px.bar(df_t, x="mode", y="cost", color="mode", text_auto="₹%.0f")
+    fig_cost = px.bar(df_t, x="mode", y="cost", color="mode", text_auto=True)
     plotly_theme(fig_cost)
-    st.plotly_chart(fig_cost)
+    st.plotly_chart(fig_cost, key="trans_cost_chart")
 
 with c2:
     st.markdown("#### Duration by Mode (Hours)")
     fig_dur = px.bar(df_t, x="duration_hours", y="mode", orientation="h", color="mode")
     plotly_theme(fig_dur)
-    st.plotly_chart(fig_dur)
+    st.plotly_chart(fig_dur, key="trans_dur_chart")
 
 with st.expander(":material/lightbulb: Essential Travel & Packing Tips"):
     st.write("• **Flight Bookings:** Book at least 3-4 weeks in advance for optimal fares.")
