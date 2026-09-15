@@ -3,52 +3,42 @@ Login / Register page for AI Trip Decision Optimizer.
 """
 import streamlit as st
 from auth.auth import init_session, login, register, logout
-from utils.theme import inject_theme_css
 
 init_session()
-inject_theme_css()
 
 if st.session_state.get("logged_in"):
     user = st.session_state.get("user", {}) or {}
-    st.markdown("""
-    <div class="app-hero-banner">
-        <div class="app-hero-title">👤 Your Account</div>
-        <div class="app-hero-subtitle">Manage your profile, active sessions, and saved itineraries</div>
-    </div>
-    """, unsafe_allow_html=True)
-    
+    st.title("Your account", icon=":material/person:")
+    st.caption("Manage your profile, active sessions, and saved itineraries")
+
     with st.container(border=True):
         st.success(f"Signed in as **{user.get('name', 'User')}** ({user.get('email', '')})", icon=":material/check_circle:")
-        st.caption(f"Account Role: **{user.get('role', 'USER')}**")
+        st.caption(f"Account role: **{user.get('role', 'USER')}**")
         if st.button("Sign out", icon=":material/logout:", type="primary"):
             logout()
             st.rerun()
     st.stop()
 
-# Header banner
-st.markdown("""
-<div class="app-hero-banner">
-    <div class="app-hero-title">🔐 Welcome to AI Trip Optimizer</div>
-    <div class="app-hero-subtitle">Sign in or create an account to unlock AI-powered travel recommendations and saved itineraries</div>
-</div>
-""", unsafe_allow_html=True)
+# ── Hero ───────────────────────────────────────────────────────────────────────
+st.title("Welcome to AI Trip Optimizer", icon=":material/flight_takeoff:")
+st.caption("Sign in or create an account to unlock AI-powered travel recommendations and saved itineraries")
 
 col_info, col_form = st.columns([1, 1], gap="medium")
 
 with col_info:
     with st.container(border=True):
-        st.subheader(":material/flight_takeoff: Why Join Us?", anchor=False)
+        st.subheader("Why join us?", icon=":material/star:", anchor=False)
         st.markdown("""
-        * **AI-Powered Recommendations**: Multi-factor scoring tailored to your budget and travel style.
-        * **Smart Trip Planning**: Automatic itinerary generation with daily cost breakdowns.
-        * **Weather & Transport Intelligence**: Live insights to choose the perfect time to visit.
-        * **Saved Itineraries**: Access your planned trips anywhere, anytime.
+        - :material/psychology: **AI-powered recommendations** — multi-factor scoring tailored to your budget and travel style
+        - :material/map: **Smart trip planning** — automatic itinerary generation with daily cost breakdowns
+        - :material/wb_sunny: **Weather & transport intelligence** — live insights to choose the perfect time to visit
+        - :material/bookmark: **Saved itineraries** — access your planned trips anywhere, anytime
         """)
-        st.info("💡 **Demo Account:** `demo@example.com` / `demo1234`", icon=":material/key:")
+        st.info("**Demo account:** `demo@example.com` / `demo1234`", icon=":material/key:")
 
 with col_form:
     with st.container(border=True):
-        tab_login, tab_register = st.tabs(["Sign in", "Create Account"])
+        tab_login, tab_register = st.tabs(["Sign in", "Create account"])
 
         with tab_login:
             with st.form("login_form"):
@@ -69,7 +59,7 @@ with col_form:
                 email_r = st.text_input("Email address", key="reg_email", placeholder="john@example.com")
                 pass_r = st.text_input("Password (min 8 chars)", type="password", key="reg_pass")
                 confirm_r = st.text_input("Confirm password", type="password", key="reg_confirm")
-                submitted_r = st.form_submit_button("Register Account", icon=":material/person_add:", type="primary")
+                submitted_r = st.form_submit_button("Register account", icon=":material/person_add:", type="primary")
                 if submitted_r:
                     ok, msg = register(name, email_r, pass_r, confirm_r)
                     if ok:

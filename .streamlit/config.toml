@@ -3,8 +3,68 @@ toolbarMode = "minimal"
 showErrorDetails = false
 
 [theme]
-primaryColor = "#0EA5E9"
-backgroundColor = "#090D16"
-secondaryBackgroundColor = "#131B2E"
-textColor = "#F8FAFC"
-font = "sans serif"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+headingFont = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800&display=swap"
+codeFont = "'JetBrains Mono':https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+baseRadius = "medium"
+buttonRadius = "medium"
+showWidgetBorder = true
+showSidebarBorder = true
+linkUnderline = false
+baseFontSize = 14
+headingFontSizes = ["30px", "22px", "18px", "16px", "14px", "12px"]
+headingFontWeights = [700, 600, 600, 600, 500, 500]
+
+[theme.light]
+primaryColor = "#4F46E5"
+backgroundColor = "#F9FAFB"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#111827"
+linkColor = "#4F46E5"
+borderColor = "#E5E7EB"
+codeTextColor = "#1F2937"
+codeBackgroundColor = "#F3F4F6"
+dataframeBorderColor = "#E5E7EB"
+dataframeHeaderBackgroundColor = "#F9FAFB"
+redColor = "#DC2626"
+orangeColor = "#D97706"
+yellowColor = "#CA8A04"
+greenColor = "#16A34A"
+blueColor = "#2563EB"
+violetColor = "#7C3AED"
+grayColor = "#6B7280"
+chartCategoricalColors = ["#4F46E5", "#0EA5E9", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#64748B"]
+
+[theme.light.sidebar]
+backgroundColor = "#F3F4F6"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#111827"
+borderColor = "#E5E7EB"
+primaryColor = "#4F46E5"
+
+[theme.dark]
+primaryColor = "#818CF8"
+backgroundColor = "#0F172A"
+secondaryBackgroundColor = "#1E293B"
+textColor = "#F1F5F9"
+linkColor = "#818CF8"
+borderColor = "#334155"
+codeTextColor = "#CBD5E1"
+codeBackgroundColor = "#0F172A"
+dataframeBorderColor = "#334155"
+dataframeHeaderBackgroundColor = "#1E293B"
+redColor = "#F87171"
+orangeColor = "#FB923C"
+yellowColor = "#FCD34D"
+greenColor = "#4ADE80"
+blueColor = "#60A5FA"
+violetColor = "#A78BFA"
+grayColor = "#94A3B8"
+chartCategoricalColors = ["#818CF8", "#38BDF8", "#34D399", "#FBBF24", "#F87171", "#A78BFA", "#94A3B8"]
+
+[theme.dark.sidebar]
+backgroundColor = "#0B1120"
+secondaryBackgroundColor = "#1E293B"
+textColor = "#F1F5F9"
+borderColor = "#334155"
+primaryColor = "#818CF8"

@@ -48,14 +48,6 @@ def no_data_message(message: str = "No data available."):
     st.info(message, icon=":material/info:")
 
 
-def db_status_banner():
-    """
-    DEPRECATED — DB status is now shown in the sidebar via app.py.
-    Kept for backward compatibility; does nothing.
-    """
-    pass
-
-
 def plotly_theme(fig):
     """Apply active Light/Dark theme configuration to any Plotly chart."""
     return apply_plotly_theme(fig)

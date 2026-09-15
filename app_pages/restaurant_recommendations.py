@@ -5,18 +5,12 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from utils.helpers import plotly_theme
-from utils.theme import inject_theme_css
 from utils.components import render_restaurant_card
 
-inject_theme_css()
 
-# Hero Header Banner
-st.markdown("""
-<div class="app-hero-banner">
-    <div class="app-hero-title">🍽️ Restaurants & Dining</div>
-    <div class="app-hero-subtitle">Explore fine dining, local food shacks, traditional thalis, and iconic cafes across travel destinations</div>
-</div>
-""", unsafe_allow_html=True)
+# ── Hero ───────────────────────────────────────────────────────────────────────
+st.title("Restaurants & dining", icon=":material/restaurant:")
+st.caption("Explore fine dining, local food shacks, traditional thalis, and iconic cafes across travel destinations")
 
 SAMPLE_RESTAURANTS = {
     "Goa": [

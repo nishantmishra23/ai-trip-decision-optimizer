@@ -5,18 +5,12 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from utils.helpers import plotly_theme
-from utils.theme import inject_theme_css
 from utils.components import render_activity_card
 
-inject_theme_css()
 
-# Hero Header Banner
-st.markdown("""
-<div class="app-hero-banner">
-    <div class="app-hero-title">🧗 Activities & Tours</div>
-    <div class="app-hero-subtitle">Discover thrilling adventure sports, cultural tours, water sports, and wellness retreats</div>
-</div>
-""", unsafe_allow_html=True)
+# ── Hero ───────────────────────────────────────────────────────────────────────
+st.title("Activities & tours", icon=":material/hiking:")
+st.caption("Discover thrilling adventure sports, cultural tours, water sports, and wellness retreats")
 
 SAMPLE_ACTIVITIES = {
     "Goa": [

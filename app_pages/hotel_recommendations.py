@@ -5,18 +5,12 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from utils.helpers import plotly_theme
-from utils.theme import inject_theme_css
 from utils.components import render_hotel_card
 
-inject_theme_css()
 
-# Hero Header Banner
-st.markdown("""
-<div class="app-hero-banner">
-    <div class="app-hero-title">🏨 Hotels & Resorts</div>
-    <div class="app-hero-subtitle">Find verified resorts, luxury stays, boutique hotels, and budget stays tailored to your destination</div>
-</div>
-""", unsafe_allow_html=True)
+# ── Hero ───────────────────────────────────────────────────────────────────────
+st.title("Hotels & resorts", icon=":material/hotel:")
+st.caption("Find verified resorts, luxury stays, boutique hotels, and budget stays tailored to your destination")
 
 SAMPLE_HOTELS = {
     "Goa": [

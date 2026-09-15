@@ -1,25 +1,21 @@
-"""AI Recommendations page — weighted scoring engine."""
+"""
+AI Recommendations page — weighted scoring engine.
+"""
 import streamlit as st
 import pandas as pd
 from recommendation.engine import get_recommendations, SAMPLE_DESTINATIONS
 from utils.helpers import format_currency
-from utils.theme import inject_theme_css
 from auth.auth import init_session
 
 init_session()
-inject_theme_css()
 
-# Hero Header Banner
-st.markdown("""
-<div class="app-hero-banner">
-    <div class="app-hero-title">🧠 AI Recommendations Engine</div>
-    <div class="app-hero-subtitle">Multi-factor weighted engine evaluating budget fit (30%), activities (25%), season (20%), popularity (15%), and efficiency (10%)</div>
-</div>
-""", unsafe_allow_html=True)
+# ── Hero ───────────────────────────────────────────────────────────────────────
+st.title("AI recommendations engine", icon=":material/psychology:")
+st.caption("Multi-factor weighted engine evaluating budget fit (30%), activities (25%), season (20%), popularity (15%), and efficiency (10%)")
 
-# ── Form ──────────────────────────────────────────────────────────────────────
+# ── Form ───────────────────────────────────────────────────────────────────────
 with st.container(border=True):
-    st.subheader(":material/tune: Recommendation Preferences", anchor=False)
+    st.subheader("Recommendation preferences", icon=":material/tune:", anchor=False)
     with st.form("rec_form"):
         col1, col2 = st.columns(2)
         with col1:
@@ -40,12 +36,10 @@ with st.container(border=True):
             )
             top_n = st.slider("Number of recommendations", min_value=3, max_value=10, value=5)
 
-        submitted = st.form_submit_button("Get AI Recommendations", icon=":material/psychology:", type="primary")
+        submitted = st.form_submit_button("Get AI recommendations", icon=":material/psychology:", type="primary")
 
-# ── Results ───────────────────────────────────────────────────────────────────
+# ── Results ────────────────────────────────────────────────────────────────────
 if submitted:
-    
-    # Save preferences to session state
     st.session_state["rec_prefs"] = {
         "budget": total_budget,
         "duration": duration_days,
@@ -53,7 +47,7 @@ if submitted:
         "activities": activities,
         "season": season
     }
-    
+
     destinations = []
     user_history = []
     try:
@@ -67,7 +61,7 @@ if submitted:
                     d["category"] = sample.get("category", "General")
                     d["season"] = sample.get("season", "Oct-Mar")
             destinations = dests
-            
+
         if st.session_state.get("logged_in") and st.session_state.get("user_id"):
             user_history = get_user_trips(st.session_state["user_id"])
     except Exception:
@@ -76,7 +70,7 @@ if submitted:
     if not destinations:
         destinations = SAMPLE_DESTINATIONS
 
-    with st.spinner("Analyzing multi-factor data..."):
+    with st.spinner("Analysing multi-factor data…"):
         recs = get_recommendations(
             destinations=destinations,
             budget=total_budget,
@@ -92,23 +86,23 @@ if submitted:
         st.warning("No recommendations found. Try adjusting your filters.", icon=":material/warning:")
         st.stop()
 
-    st.subheader(f"Top {len(recs)} Recommended Destinations", anchor=False)
+    st.subheader(f"Top {len(recs)} recommended destinations", icon=":material/verified:", anchor=False)
 
     for idx, rec in enumerate(recs):
         dest = rec["destination"]
         score = rec.get("score", 0)
-        
-        # Save recommendation to DB if logged in
+
         if st.session_state.get("logged_in") and st.session_state.get("user_id"):
             try:
                 save_recommendation(0, dest.get("destination_id", 0), score, ", ".join(rec.get("reasons", [])))
-            except:
+            except Exception:
                 pass
 
         with st.container(border=True):
             col_a, col_b = st.columns([3, 1], gap="medium")
             with col_a:
-                st.markdown(f"### #{idx + 1} {dest.get('name')}, {dest.get('country', '')}")
+                rank_badge = ":green-badge[Best match]" if idx == 0 else f":blue-badge[Rank #{idx + 1}]"
+                st.markdown(f"{rank_badge} **{dest.get('name')}, {dest.get('country', '')}**")
                 st.caption(f"**{dest.get('category', '')}** · Best season: {dest.get('season', 'Varies')}")
 
                 subcols = st.columns(4)
@@ -129,13 +123,10 @@ if submitted:
                     st.caption(f"• {reason}")
 
             with col_b:
-                if idx == 0:
-                    st.metric("BEST MATCH", f"{score:.0f} / 100")
-                else:
-                    st.metric("Score", f"{score:.0f} / 100")
+                st.metric("AI score", f"{score:.0f} / 100")
                 est = rec.get("estimated_total", 0)
                 st.metric("Est. total", format_currency(est))
-                
+
                 if st.button("Plan this trip", key=f"plan_rec_{idx}_{dest.get('name')}", type="primary" if idx == 0 else "secondary"):
                     st.session_state["planner_prefill"] = dest.get("name")
                     st.switch_page("app_pages/trip_planner.py")

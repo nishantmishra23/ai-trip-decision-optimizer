@@ -5,10 +5,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from utils.helpers import format_currency, plotly_theme
-from utils.theme import inject_theme_css
 from recommendation.engine import SAMPLE_DESTINATIONS
-
-inject_theme_css()
 
 SAMPLE_TRANSPORT = {
     "Goa": [
@@ -59,19 +56,15 @@ SAMPLE_TRANSPORT = {
     ],
 }
 
-# Hero Header Banner
-st.markdown("""
-<div class="app-hero-banner">
-    <div class="app-hero-title">🚆 Transportation & Route Analysis</div>
-    <div class="app-hero-subtitle">Compare flights, express trains, intercity buses, and self-drive routes by cost, duration, and convenience</div>
-</div>
-""", unsafe_allow_html=True)
+# ── Hero ───────────────────────────────────────────────────────────────────────
+st.title("Transportation & route analysis", icon=":material/train:")
+st.caption("Compare flights, express trains, intercity buses, and self-drive routes by cost, duration, and convenience")
 
 dest_names = [d["name"] for d in SAMPLE_DESTINATIONS]
 
 with st.container(border=True):
-    st.subheader(":material/tune: Route Selection", anchor=False)
-    selected_dest = st.selectbox("Select Target Destination", dest_names)
+    st.subheader("Route selection", icon=":material/tune:", anchor=False)
+    selected_dest = st.selectbox("Select target destination", dest_names)
 
 routes = SAMPLE_TRANSPORT.get(selected_dest, [
     {"mode": "Direct Flight", "icon": ":material/flight:", "cost": 6000, "duration_hours": 2.5, "comfort_rating": 4.7},
@@ -79,35 +72,35 @@ routes = SAMPLE_TRANSPORT.get(selected_dest, [
     {"mode": "Intercity Bus", "icon": ":material/directions_bus:", "cost": 1200, "duration_hours": 12.0, "comfort_rating": 4.0},
 ])
 
-st.subheader(f":material/alt_route: Transit Mode Options for {selected_dest}", anchor=False)
+st.subheader(f"Transit mode options for {selected_dest}", icon=":material/alt_route:", anchor=False)
 cols = st.columns(len(routes))
 
 for idx, r in enumerate(routes):
     with cols[idx]:
         with st.container(border=True):
-            st.markdown(f"### {r['icon']} {r['mode']}")
-            st.metric("Estimated Cost", format_currency(r["cost"]))
+            st.markdown(f"{r['icon']} **{r['mode']}**")
+            st.metric("Estimated cost", format_currency(r["cost"]))
             st.metric("Duration", f"{r['duration_hours']} hrs")
-            st.caption(f"Comfort Score: **{r['comfort_rating']} / 5.0**")
+            st.caption(f"Comfort score: **{r['comfort_rating']} / 5.0**")
 
-# Visual Comparison Charts
-st.subheader(":material/bar_chart: Transit Cost & Travel Time Comparison", anchor=False)
+# ── Charts ────────────────────────────────────────────────────────────────────
+st.subheader("Cost & duration comparison", icon=":material/bar_chart:", anchor=False)
 df_t = pd.DataFrame(routes)
 
 c1, c2 = st.columns(2, gap="medium")
 with c1:
-    st.markdown("#### Travel Cost by Mode")
+    st.markdown("##### Travel cost by mode")
     fig_cost = px.bar(df_t, x="mode", y="cost", color="mode", text_auto=True)
     plotly_theme(fig_cost)
     st.plotly_chart(fig_cost, key="trans_cost_chart")
 
 with c2:
-    st.markdown("#### Duration by Mode (Hours)")
+    st.markdown("##### Duration by mode (hours)")
     fig_dur = px.bar(df_t, x="duration_hours", y="mode", orientation="h", color="mode")
     plotly_theme(fig_dur)
     st.plotly_chart(fig_dur, key="trans_dur_chart")
 
-with st.expander(":material/lightbulb: Essential Travel & Packing Tips"):
-    st.write("• **Flight Bookings:** Book at least 3-4 weeks in advance for optimal fares.")
-    st.write("• **Train Tickets:** Tatkal quota opens 24 hours prior to departure for Indian Railways.")
-    st.write("• **Luggage:** Ensure baggage complies with airline limits (15kg check-in for domestic flights).")
+with st.expander("Essential travel tips", icon=":material/lightbulb:"):
+    st.write("• **Flight bookings:** Book at least 3–4 weeks in advance for optimal fares.")
+    st.write("• **Train tickets:** Tatkal quota opens 24 hours prior to departure for Indian Railways.")
+    st.write("• **Luggage:** Ensure baggage complies with airline limits (15 kg check-in for domestic flights).")

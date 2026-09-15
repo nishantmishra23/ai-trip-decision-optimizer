@@ -6,20 +6,14 @@ import pandas as pd
 import plotly.express as px
 from auth.auth import init_session
 from utils.helpers import format_currency, plotly_theme
-from utils.theme import inject_theme_css
 from services.weather_service import get_weather
 from recommendation.engine import score_destination, SAMPLE_DESTINATIONS
 
 init_session()
-inject_theme_css()
 
-# Hero Header Banner
-st.markdown("""
-<div class="app-hero-banner">
-    <div class="app-hero-title">📋 Comprehensive Trip Summary</div>
-    <div class="app-hero-subtitle">Complete overview of your trip plan, expense breakdown, AI Match Score, and dynamic packing checklist</div>
-</div>
-""", unsafe_allow_html=True)
+# ── Hero ───────────────────────────────────────────────────────────────────────
+st.title("Comprehensive trip summary", icon=":material/summarize:")
+st.caption("Complete overview of your trip plan, expense breakdown, AI match score, and dynamic packing checklist")
 
 user = st.session_state.get("user", {}) or {}
 user_id = user.get("user_id")
@@ -34,13 +28,13 @@ if st.session_state.get("logged_in") and user_id:
 
 if trips:
     trip_names = [f"Trip to {t.get('destination_name', 'Destination')} ({t.get('start_date', '')})" for t in trips]
-    selected_idx = st.selectbox("Select Trip", range(len(trips)), format_func=lambda x: trip_names[x])
+    selected_idx = st.selectbox("Select trip", range(len(trips)), format_func=lambda x: trip_names[x])
     current_trip = trips[selected_idx]
     dest_name = current_trip.get("destination_name", "Goa")
     budget = float(current_trip.get("total_budget", 35000))
     travelers = current_trip.get("travelers", 2)
 else:
-    st.info("Showing Demo Trip Summary (Log in and create a trip to see your custom trip summary).", icon=":material/info:")
+    st.info("Showing demo trip summary (sign in and create a trip to see your custom summary).", icon=":material/info:")
     dest_name = "Goa"
     budget = 35000
     travelers = 2
@@ -53,12 +47,11 @@ else:
         "total_budget": 35000
     }
 
-# Find destination data
+# ── Destination data ───────────────────────────────────────────────────────────
 dest_dict = {d["name"]: d for d in SAMPLE_DESTINATIONS}
 dest_data = dest_dict.get(dest_name, SAMPLE_DESTINATIONS[0])
 category = dest_data.get("category", "General")
 
-# Generate Match Score & Reasons
 rec_prefs = st.session_state.get("rec_prefs", {
     "budget": budget,
     "duration": 7,
@@ -70,17 +63,18 @@ rec_prefs = st.session_state.get("rec_prefs", {
 budget_per_day = rec_prefs.get("budget", budget) / max(rec_prefs.get("duration", 7), 1)
 
 match_data = score_destination(
-    dest_data, 
-    budget_per_day, 
-    rec_prefs.get("duration", 7), 
-    rec_prefs.get("activities", []), 
-    rec_prefs.get("season", "Any season"), 
+    dest_data,
+    budget_per_day,
+    rec_prefs.get("duration", 7),
+    rec_prefs.get("activities", []),
+    rec_prefs.get("season", "Any season"),
     rec_prefs.get("style", "Mid-range")
 )
 match_score = match_data.get("score", 85.0)
 reasons = match_data.get("reasons", [])
 
-st.subheader(f":material/flight_takeoff: Overview: {dest_name}", anchor=False)
+# ── Overview Metrics ───────────────────────────────────────────────────────────
+st.subheader(f"Overview: {dest_name}", icon=":material/flight_takeoff:", anchor=False)
 m1, m2, m3, m4 = st.columns(4)
 
 with m1:
@@ -91,63 +85,61 @@ with m2:
         st.metric("Travellers", str(travelers))
 with m3:
     with st.container(border=True):
-        st.metric("Total Budget", format_currency(budget))
+        st.metric("Total budget", format_currency(budget))
 with m4:
     with st.container(border=True):
-        st.metric("AI Match Score", f"{match_score:.0f}%", delta="Excellent Match" if match_score > 75 else None)
+        st.metric("AI match score", f"{match_score:.0f}%", delta="Excellent match" if match_score > 75 else None)
 
 if reasons:
-    with st.expander("✨ Why this trip works for you", expanded=True):
+    with st.expander("Why this trip works for you", icon=":material/auto_awesome:", expanded=True):
         for reason in reasons:
             st.markdown(f"- {reason}")
 
-# Financial Breakdown Donut
-st.subheader(":material/pie_chart: Expense Distribution Breakdown", anchor=False)
-categories = ["Transport", "Accommodation", "Food & Dining", "Activities", "Miscellaneous"]
+# ── Budget Breakdown ───────────────────────────────────────────────────────────
+st.subheader("Expense distribution", icon=":material/pie_chart:", anchor=False)
+categories = ["Transport", "Accommodation", "Food & dining", "Activities", "Miscellaneous"]
 amounts = [budget * 0.25, budget * 0.35, budget * 0.20, budget * 0.15, budget * 0.05]
 
 df_b = pd.DataFrame({"Category": categories, "Amount (₹)": amounts})
 fig_donut = px.pie(df_b, names="Category", values="Amount (₹)", hole=0.5,
-                   color_discrete_sequence=["#0EA5E9", "#10B981", "#F59E0B", "#8B5CF6", "#64748B"])
+                   color_discrete_sequence=["#4F46E5", "#0EA5E9", "#10B981", "#F59E0B", "#64748B"])
 plotly_theme(fig_donut)
 st.plotly_chart(fig_donut, key="summary_donut_chart")
 
-# Weather Forecast & Packing Checklist
+# ── Weather & Checklist ────────────────────────────────────────────────────────
 c_w, c_c = st.columns(2, gap="medium")
 
 with c_w:
-    st.subheader(":material/wb_sunny: Weather Outlook", anchor=False)
+    st.subheader("Weather outlook", icon=":material/wb_sunny:", anchor=False)
     weather = get_weather(dest_name)
     with st.container(border=True):
-        st.write(f"• **Expected Temp:** {weather.get('temp', 28)}°C")
+        st.write(f"• **Expected temp:** {weather.get('temp', 28)}°C")
         st.write(f"• **Condition:** {weather.get('condition', 'Sunny')}")
         st.write(f"• **Humidity:** {weather.get('humidity', 65)}%")
 
 with c_c:
-    st.subheader(":material/checklist: Dynamic Packing Checklist", anchor=False)
-    with st.expander("📁 Travel Documents", expanded=True):
+    st.subheader("Packing checklist", icon=":material/checklist:", anchor=False)
+    with st.expander("Travel documents", icon=":material/folder:", expanded=True):
         st.checkbox("Government ID / Passport", value=True)
-        st.checkbox("Flight & Hotel Tickets", value=True)
-        st.checkbox("Travel Insurance Copy", value=False)
-        
-    with st.expander(f"🧳 Packing for {category}", expanded=True):
-        st.checkbox("Toiletries & Essentials", value=True)
-        
-        # Dynamic additions based on category
+        st.checkbox("Flight & hotel tickets", value=True)
+        st.checkbox("Travel insurance copy", value=False)
+
+    with st.expander(f"Packing for {category}", icon=":material/luggage:", expanded=True):
+        st.checkbox("Toiletries & essentials", value=True)
+
         if category == "Beach":
-            st.checkbox("Swimwear & Beach Towel", value=True)
-            st.checkbox("Sunscreen (SPF 50+) & Sunglasses", value=True)
-            st.checkbox("Flip-flops & Hat", value=True)
-        elif category == "Mountains" or "snow" in weather.get("condition", "").lower():
-            st.checkbox("Heavy Jackets & Thermals", value=True)
-            st.checkbox("Trekking/Hiking Shoes", value=True)
-            st.checkbox("Gloves, Beanies & Woollen Socks", value=True)
-        elif category == "City" or category == "Heritage":
-            st.checkbox("Comfortable Walking Shoes", value=True)
-            st.checkbox("Smart Casual Evening Wear", value=True)
-            st.checkbox("Power Bank for Photography", value=True)
-            
-        # Dynamic additions based on weather
+            st.checkbox("Swimwear & beach towel", value=True)
+            st.checkbox("Sunscreen (SPF 50+) & sunglasses", value=True)
+            st.checkbox("Flip-flops & hat", value=True)
+        elif category in ("Mountains", "Adventure"):
+            st.checkbox("Heavy jackets & thermals", value=True)
+            st.checkbox("Trekking / hiking shoes", value=True)
+            st.checkbox("Gloves, beanies & woollen socks", value=True)
+        elif category in ("City", "Heritage"):
+            st.checkbox("Comfortable walking shoes", value=True)
+            st.checkbox("Smart casual evening wear", value=True)
+            st.checkbox("Power bank for photography", value=True)
+
         if "rain" in weather.get("condition", "").lower():
-            st.checkbox("Umbrella & Raincoat", value=True, key="rain_gear")
-            st.checkbox("Waterproof Bag/Cover", value=True, key="wp_bag")
+            st.checkbox("Umbrella & raincoat", value=True, key="rain_gear")
+            st.checkbox("Waterproof bag / cover", value=True, key="wp_bag")
