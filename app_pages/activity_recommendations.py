@@ -1,5 +1,7 @@
 """
-Activity Recommendations page for AI Trip Decision Optimizer.
+Activity & Things to Do Recommendations page for AI Trip Decision Optimizer.
+Comprehensive activities, adventure tours, spiritual walks, and heritage sights
+across all 28 Indian States with direct Google Maps navigation and trip planning.
 """
 import os
 import sys
@@ -13,124 +15,219 @@ if ROOT_DIR not in sys.path:
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from utils.helpers import plotly_theme
-from utils.components import render_activity_card
+from utils.helpers import plotly_theme, format_currency
+from data.india_tourism_data import (
+    get_all_state_names,
+    get_destinations_by_state,
+    get_destination_data,
+    filter_activities,
+    filter_places,
+    gmaps_url,
+    get_stats
+)
+from services.weather_service import get_weather
 
+# ── Hero Section ───────────────────────────────────────────────────────────────
+st.title("Activities, Tours & Sights across All 28 States", icon=":material/hiking:")
+st.caption(
+    "Explore thrilling Himalayan treks, river rafting, desert camel safaris, cultural temple walks, and wildlife safaris "
+    "across every state of India — complete with costs, duration, and direct Google Maps locations."
+)
 
-# ── Hero ───────────────────────────────────────────────────────────────────────
-st.title("Activities & tours", icon=":material/hiking:")
-st.caption("Discover thrilling adventure sports, cultural tours, water sports, and wellness retreats")
+stats = get_stats()
+m1, m2, m3, m4 = st.columns(4)
+with m1:
+    st.metric("States Covered", f"{stats['states_count']} States", delta="100% of India", delta_color="normal")
+with m2:
+    st.metric("Destinations", f"{stats['destinations_count']}+ Cities", delta="Curated Experiences", delta_color="normal")
+with m3:
+    st.metric("Curated Activities", f"{stats['activities_count']}+ Tours", delta="Adventure & Heritage", delta_color="normal")
+with m4:
+    st.metric("Activity Cost", "Free – ₹4,500", delta="Walks to Safaris", delta_color="normal")
 
-SAMPLE_ACTIVITIES = {
-    "Goa": [
-        {"name": "Scuba Diving at Grande Island", "category": "Water Sports", "price": 3500, "duration_hrs": 4, "rating": 4.8, "destination_name": "Goa"},
-        {"name": "Dudhsagar Waterfalls Trek", "category": "Trekking", "price": 2000, "duration_hrs": 6, "rating": 4.7, "destination_name": "Goa"},
-        {"name": "Sunset Cruise on Mandovi River", "category": "Sightseeing", "price": 800, "duration_hrs": 2, "rating": 4.5, "destination_name": "Goa"},
-        {"name": "Old Goa Heritage Church Tour", "category": "Heritage", "price": 500, "duration_hrs": 3, "rating": 4.4, "destination_name": "Goa"},
-    ],
-    "Manali": [
-        {"name": "Solang Valley Paragliding", "category": "Adventure", "price": 3000, "duration_hrs": 2, "rating": 4.7, "destination_name": "Manali"},
-        {"name": "Beas River White Water Rafting", "category": "Adventure", "price": 1800, "duration_hrs": 3, "rating": 4.6, "destination_name": "Manali"},
-        {"name": "Rohtang Pass Snow Scooter", "category": "Adventure", "price": 2500, "duration_hrs": 4, "rating": 4.8, "destination_name": "Manali"},
-        {"name": "Hadimba Temple & Cedar Forest Walk", "category": "Heritage", "price": 300, "duration_hrs": 2, "rating": 4.5, "destination_name": "Manali"},
-    ],
-    "Jaipur": [
-        {"name": "Amber Fort Elephant / Jeep Safari", "category": "Heritage", "price": 1200, "duration_hrs": 3, "rating": 4.7, "destination_name": "Jaipur"},
-        {"name": "Hot Air Balloon Ride", "category": "Adventure", "price": 12000, "duration_hrs": 3, "rating": 4.9, "destination_name": "Jaipur"},
-        {"name": "City Palace & Jantar Mantar Tour", "category": "Heritage", "price": 700, "duration_hrs": 3, "rating": 4.6, "destination_name": "Jaipur"},
-        {"name": "Hawa Mahal Photography & Street Walk", "category": "Sightseeing", "price": 200, "duration_hrs": 2, "rating": 4.5, "destination_name": "Jaipur"},
-    ],
-    "Munnar": [
-        {"name": "Tea Plantation & Processing Walk", "category": "Nature", "price": 400, "duration_hrs": 3, "rating": 4.7, "destination_name": "Munnar"},
-        {"name": "Eravikulam National Park Nilgiri Tahr Safari", "category": "Wildlife", "price": 650, "duration_hrs": 4, "rating": 4.6, "destination_name": "Munnar"},
-        {"name": "Traditional Ayurvedic Spa & Wellness", "category": "Yoga & Wellness", "price": 2500, "duration_hrs": 2, "rating": 4.8, "destination_name": "Munnar"},
-        {"name": "Top Station Panoramic Trek", "category": "Trekking", "price": 800, "duration_hrs": 5, "rating": 4.6, "destination_name": "Munnar"},
-    ],
-    "Agra": [
-        {"name": "Taj Mahal Sunrise Guided Tour", "category": "Heritage", "price": 1100, "duration_hrs": 3, "rating": 4.9, "destination_name": "Agra"},
-        {"name": "Agra Fort Mughal Citadel Walk", "category": "Heritage", "price": 600, "duration_hrs": 2, "rating": 4.6, "destination_name": "Agra"},
-        {"name": "Fatehpur Sikri Royal Complex Excursion", "category": "Heritage", "price": 850, "duration_hrs": 4, "rating": 4.5, "destination_name": "Agra"},
-        {"name": "Mehtab Bagh River Sunset View", "category": "Sightseeing", "price": 350, "duration_hrs": 2, "rating": 4.7, "destination_name": "Agra"},
-    ],
-    "Bali": [
-        {"name": "Tanah Lot Sea Temple Sunset", "category": "Heritage", "price": 800, "duration_hrs": 3, "rating": 4.8, "destination_name": "Bali"},
-        {"name": "Tegallalang Rice Terrace Trek", "category": "Nature", "price": 500, "duration_hrs": 2, "rating": 4.7, "destination_name": "Bali"},
-        {"name": "Kuta Beach Surfing Lessons", "category": "Water Sports", "price": 1800, "duration_hrs": 3, "rating": 4.6, "destination_name": "Bali"},
-        {"name": "Balinese Traditional Massage & Wellness", "category": "Yoga & Wellness", "price": 2600, "duration_hrs": 2, "rating": 4.8, "destination_name": "Bali"},
-    ],
-    "Paris": [
-        {"name": "Eiffel Tower Summit Access & Tour", "category": "Sightseeing", "price": 3200, "duration_hrs": 3, "rating": 4.8, "destination_name": "Paris"},
-        {"name": "Louvre Museum Masterpieces Guided Visit", "category": "Heritage", "price": 2400, "duration_hrs": 3, "rating": 4.9, "destination_name": "Paris"},
-        {"name": "Seine River Evening Dinner Cruise", "category": "Sightseeing", "price": 4500, "duration_hrs": 3, "rating": 4.7, "destination_name": "Paris"},
-        {"name": "Versailles Palace & Royal Gardens", "category": "Heritage", "price": 3800, "duration_hrs": 5, "rating": 4.8, "destination_name": "Paris"},
-    ],
-    "Rishikesh": [
-        {"name": "Ganges River Rafting (16km)", "category": "Adventure", "price": 1500, "duration_hrs": 4, "rating": 4.8, "destination_name": "Rishikesh"},
-        {"name": "Bungee Jumping at Jumpin Heights", "category": "Adventure", "price": 3800, "duration_hrs": 2, "rating": 4.9, "destination_name": "Rishikesh"},
-        {"name": "Sunrise Yoga & Ashram Meditation", "category": "Yoga & Wellness", "price": 500, "duration_hrs": 2, "rating": 4.7, "destination_name": "Rishikesh"},
-        {"name": "Beatles Ashram Cultural Walk", "category": "Heritage", "price": 300, "duration_hrs": 2, "rating": 4.5, "destination_name": "Rishikesh"},
-    ],
-    "Andaman Islands": [
-        {"name": "Scuba Diving at Elephant Beach", "category": "Water Sports", "price": 4200, "duration_hrs": 4, "rating": 4.8, "destination_name": "Andaman Islands"},
-        {"name": "Radhanagar Beach White Sands Sunset", "category": "Sightseeing", "price": 500, "duration_hrs": 2, "rating": 4.9, "destination_name": "Andaman Islands"},
-        {"name": "Cellular Jail National Memorial & Light Show", "category": "Heritage", "price": 400, "duration_hrs": 3, "rating": 4.6, "destination_name": "Andaman Islands"},
-        {"name": "Mangrove Forest Kayaking Expedition", "category": "Nature", "price": 1800, "duration_hrs": 3, "rating": 4.7, "destination_name": "Andaman Islands"},
-    ],
-    "Leh-Ladakh": [
-        {"name": "Pangong Tso High-Altitude Lake Excursion", "category": "Nature", "price": 3500, "duration_hrs": 8, "rating": 4.9, "destination_name": "Leh-Ladakh"},
-        {"name": "Khardung La Pass Motorbike Experience", "category": "Adventure", "price": 2200, "duration_hrs": 4, "rating": 4.8, "destination_name": "Leh-Ladakh"},
-        {"name": "Nubra Valley Sand Dunes & Camel Safari", "category": "Adventure", "price": 2800, "duration_hrs": 6, "rating": 4.7, "destination_name": "Leh-Ladakh"},
-        {"name": "Thiksey & Hemis Monasteries Tour", "category": "Heritage", "price": 700, "duration_hrs": 4, "rating": 4.6, "destination_name": "Leh-Ladakh"},
-    ],
-}
+st.divider()
 
-def load_activities():
-    try:
-        from database.queries import get_all_activities
-        act = get_all_activities()
-        if act:
-            return act
-    except Exception:
-        pass
-    all_act = []
-    for dest, a_list in SAMPLE_ACTIVITIES.items():
-        all_act.extend(a_list)
-    return all_act
+# ── State & Destination Cascade Selectors ──────────────────────────────────────
+all_states = get_all_state_names()
 
-activities = load_activities()
+default_state_idx = 0
+if "selected_state" in st.session_state and st.session_state["selected_state"] in all_states:
+    default_state_idx = all_states.index(st.session_state["selected_state"])
+elif "Himachal Pradesh" in all_states:
+    default_state_idx = all_states.index("Himachal Pradesh")
 
+sel_c1, sel_c2 = st.columns([1.5, 2], gap="medium")
+
+with sel_c1:
+    selected_state = st.selectbox(
+        "1. Select State (All 28 States)",
+        all_states,
+        index=default_state_idx,
+        key="act_page_state_select"
+    )
+
+destinations = get_destinations_by_state(selected_state)
+dest_names = [d["name"] for d in destinations] if destinations else []
+
+with sel_c2:
+    selected_dest_name = st.selectbox(
+        f"2. Select Destination in {selected_state}",
+        dest_names,
+        key="act_page_dest_select"
+    )
+
+current_dest = get_destination_data(selected_state, selected_dest_name) if selected_dest_name else None
+
+# ── Destination Overview Banner ────────────────────────────────────────────────
+if current_dest:
+    with st.container(border=True):
+        head_c1, head_c2 = st.columns([3, 1])
+        with head_c1:
+            st.subheader(f"{current_dest['name']} — {current_dest.get('tagline', '')}", anchor=False)
+            st.write(current_dest.get("overview", ""))
+            
+            # Badges row
+            b_cols = st.columns(4)
+            with b_cols[0]:
+                st.badge(f"Style: {current_dest.get('travel_style', 'Adventure & Sights')}", color="blue")
+            with b_cols[1]:
+                st.badge(f"Best Time: {current_dest.get('best_time', 'All Year')}", color="green")
+            with b_cols[2]:
+                st.badge(f"Recommended: {current_dest.get('recommended_duration', '3 Days')}", color="orange")
+            with b_cols[3]:
+                st.badge(f"Rating: {current_dest.get('rating', 4.5):.1f} ★", color="violet")
+
+        with head_c2:
+            st.markdown("##### 📍 Exploration Tools")
+            maps_all_acts = gmaps_url(f"Things to do and tourist spots in {selected_dest_name}, {selected_state}")
+            st.link_button("🗺️ View Sights on Maps", maps_all_acts, use_container_width=True)
+            
+            weather_city = current_dest.get("weather_city", selected_dest_name.split()[0])
+            if st.button(f"🌤️ Weather in {weather_city}", key=f"act_weather_btn_{weather_city}", use_container_width=True):
+                w = get_weather(weather_city)
+                st.info(
+                    f"**{weather_city}:** {w.get('temp')}°C, {w.get('condition')} ({w.get('description')})\n\n"
+                    f"Humidity: {w.get('humidity')}% • Wind: {w.get('wind_speed')} km/h",
+                    icon=":material/wb_sunny:"
+                )
+
+# ── Section 1: Places to Visit ─────────────────────────────────────────────────
+places = current_dest.get("places_to_visit", []) if current_dest else []
+st.subheader(f"📍 Top Places to Visit in {selected_dest_name} ({len(places)} landmarks)", anchor=False)
+
+if places:
+    p_cols = st.columns(min(len(places), 3), gap="medium")
+    for p_idx, p in enumerate(places):
+        with p_cols[p_idx % 3]:
+            with st.container(border=True):
+                st.markdown(f"#### 🏛️ {p.get('name')}")
+                st.badge(p.get("category", "Sight"), color="blue")
+                st.write(p.get("highlight", ""))
+                
+                c_fee, c_time = st.columns(2)
+                with c_fee:
+                    st.metric("Entry Fee", p.get("fee", "Free"))
+                with c_time:
+                    st.metric("Est. Time", p.get("time", "2 hrs"))
+                
+                p_map_link = p.get("gmaps_url", gmaps_url(f"{p.get('name')}, {selected_dest_name}"))
+                st.link_button("📍 View Location on Google Maps", p_map_link, use_container_width=True)
+
+st.divider()
+
+# ── Section 2: Things to Do & Activities ───────────────────────────────────────
 with st.container(border=True):
-    st.subheader(":material/filter_list: Filter Activities", anchor=False)
-    c1, c2, c3 = st.columns(3, gap="medium")
-    with c1:
-        dests = ["All Destinations"] + sorted(list(set(a.get("destination_name", "General") for a in activities)))
-        selected_dest = st.selectbox("Destination", dests)
-    with c2:
-        cats = ["All Categories"] + sorted(list(set(a.get("category", "General") for a in activities)))
-        selected_cat = st.selectbox("Activity Category", cats)
-    with c3:
-        max_price = st.slider("Max Activity Price (₹)", min_value=500, max_value=15000, value=10000, step=500)
+    st.subheader(":material/tune: Filter Things to Do in " + (selected_dest_name or selected_state), anchor=False)
+    f1, f2 = st.columns(2, gap="medium")
+    
+    with f1:
+        max_cost = st.slider(
+            "Max Activity Cost (₹)",
+            min_value=0,
+            max_value=5000,
+            value=3500,
+            step=250,
+            key="act_slider_max_cost"
+        )
+    with f2:
+        cat_choices = ["All Categories", "Adventure", "Trek", "Safari", "Tour", "Cultural", "Water Sports", "Yoga"]
+        selected_cat = st.selectbox("Activity Style", cat_choices, key="act_cat_select")
 
-filtered = activities
-if selected_dest != "All Destinations":
-    filtered = [a for a in filtered if a.get("destination_name") == selected_dest]
-if selected_cat != "All Categories":
-    filtered = [a for a in filtered if a.get("category") == selected_cat]
-filtered = [a for a in filtered if a.get("price", 0) <= max_price]
+filtered_acts = filter_activities(
+    current_dest,
+    max_cost=max_cost,
+    category=selected_cat if selected_cat != "All Categories" else None
+)
 
-st.markdown(f"Showing **{len(filtered)}** activity options")
+st.markdown(f"#### Curated Things to Do in {selected_dest_name} ({len(filtered_acts)} experiences)")
 
-if not filtered:
-    st.info("No activities match your criteria.", icon=":material/search_off:")
+if not filtered_acts:
+    st.info(
+        f"No activities match your cost or category filter in {selected_dest_name}. Try increasing the cost slider.",
+        icon=":material/search_off:"
+    )
+    st.link_button(
+        f"🔍 Discover All Activities in {selected_dest_name} on Google Maps",
+        gmaps_url(f"Tours, activities and things to do in {selected_dest_name}, {selected_state}"),
+        type="primary"
+    )
 else:
-    cols = st.columns(3)
-    for idx, a in enumerate(filtered):
-        with cols[idx % 3]:
-            render_activity_card(a)
+    act_cols = st.columns(min(len(filtered_acts), 3), gap="medium")
+    for a_idx, a in enumerate(filtered_acts):
+        with act_cols[a_idx % 3]:
+            with st.container(border=True):
+                st.markdown(f"#### 🎯 {a.get('name')}")
+                st.badge(a.get("category", "Activity"), color="green")
+                
+                c_cost, c_dur = st.columns(2)
+                with c_cost:
+                    cost_val = a.get("cost", 0)
+                    st.metric("Estimated Cost", "Free" if cost_val == 0 else format_currency(cost_val))
+                with c_dur:
+                    st.metric("Duration", a.get("duration", "2 hrs"))
+                
+                # Direct Google Maps Link
+                act_map_link = gmaps_url(f"{a.get('name')}, {selected_dest_name}")
+                st.link_button("📍 Open in Google Maps", act_map_link, use_container_width=True)
+                
+                # Add to Trip Planner
+                if st.button("📌 Add Activity to Planner", key=f"btn_act_plan_{a_idx}_{a.get('name')[:15]}", use_container_width=True):
+                    st.session_state["planner_prefill"] = selected_dest_name
+                    st.session_state["selected_activity"] = a.get("name")
+                    st.success(f"Added {a.get('name')} to your plan! Opening Planner...")
+                    st.switch_page("app_pages/trip_planner.py")
 
-if filtered:
-    st.subheader(":material/bar_chart: Activities Breakdown by Category", anchor=False)
-    df_act = pd.DataFrame(filtered)
-    fig = px.bar(df_act, x="category", y="price", color="category", text_auto=True)
-    plotly_theme(fig)
-    st.plotly_chart(fig, key="act_price_chart")
+# ── Google-Style "Explore Other Destinations in State" ──────────────────────────
+st.divider()
+st.subheader(f":material/hiking: Explore Activities in Other Destinations of {selected_state}", anchor=False)
+
+other_dests = [d for d in destinations if d["name"] != selected_dest_name]
+if other_dests:
+    od_cols = st.columns(min(len(other_dests), 4))
+    for o_idx, od in enumerate(other_dests[:4]):
+        with od_cols[o_idx]:
+            with st.container(border=True):
+                st.markdown(f"**{od['name']}**")
+                st.caption(od.get("tagline", ""))
+                st.write(f"🎯 {len(od.get('things_to_do', []))} activities • 🏛️ {len(od.get('places_to_visit', []))} sights")
+                if st.button("Explore Here", key=f"switch_act_dest_{o_idx}_{od['name']}", use_container_width=True):
+                    st.session_state["act_page_dest_select"] = od["name"]
+                    st.rerun()
+
+# ── Activity Cost Chart ────────────────────────────────────────────────────────
+if filtered_acts:
+    st.divider()
+    st.subheader(":material/bar_chart: Activity Cost Overview", anchor=False)
+    df_a = pd.DataFrame(filtered_acts)
+    if "name" in df_a.columns and "cost" in df_a.columns:
+        fig = px.bar(
+            df_a,
+            x="name",
+            y="cost",
+            color="category",
+            text_auto="₹%{y:,.0f}",
+            labels={"cost": "Estimated Cost (₹)", "name": "Activity / Tour", "category": "Category"},
+            title=f"Activity Costs in {selected_dest_name}"
+        )
+        plotly_theme(fig)
+        st.plotly_chart(fig, key="act_cost_chart_v2", use_container_width=True)

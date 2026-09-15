@@ -120,28 +120,47 @@ for state in states:
 
         st.divider()
 
-        # Action bar: Live Weather & Gemini Planner
-        col_w_btn, col_w_disp = st.columns([1, 3], gap="medium")
+        # Action bar: Live Weather, Stays, Dining, Activities & Trip Planner
+        col_w_btn, col_stays, col_dining, col_acts, col_plan = st.columns([1.2, 1, 1, 1, 1.2], gap="small")
         weather_key = f"show_weather_{state['id']}"
 
         with col_w_btn:
             if st.button(
-                f"🌤️ Live Weather in {state['weather_city']}",
+                f"🌤️ Live Weather",
                 key=f"btn_weather_{state['id']}",
                 type="secondary",
                 use_container_width=True,
             ):
-                st.session_state[weather_key] = True
+                st.session_state[weather_key] = not st.session_state.get(weather_key, False)
 
-        with col_w_disp:
-            if st.session_state.get(weather_key, False):
-                with st.spinner(f"Fetching live weather for {state['weather_city']}..."):
-                    w = get_weather(state["weather_city"])
-                    source_label = "🟢 Live (OpenWeather API)" if w.get("source") == "live" else "🟡 Curated Regional Climate"
-                    st.info(
-                        f"**{state['weather_city']} Current Weather:** {w.get('temp')}°C (Feels like {w.get('feels_like')}°C) • "
-                        f"**{w.get('condition')}** ({w.get('description')}) • "
-                        f"Humidity: {w.get('humidity')}% • Wind: {w.get('wind_speed')} km/h • "
-                        f"{source_label}",
-                        icon=":material/wb_sunny:"
-                    )
+        with col_stays:
+            if st.button("🏨 Stays", key=f"btn_stays_{state['id']}", use_container_width=True):
+                st.session_state["selected_state"] = state["name"]
+                st.switch_page("app_pages/hotel_recommendations.py")
+
+        with col_dining:
+            if st.button("🍽️ Dining", key=f"btn_dining_{state['id']}", use_container_width=True):
+                st.session_state["selected_state"] = state["name"]
+                st.switch_page("app_pages/restaurant_recommendations.py")
+
+        with col_acts:
+            if st.button("🎯 Activities", key=f"btn_acts_{state['id']}", use_container_width=True):
+                st.session_state["selected_state"] = state["name"]
+                st.switch_page("app_pages/activity_recommendations.py")
+
+        with col_plan:
+            if st.button("🤖 Plan Trip", key=f"btn_plan_{state['id']}", type="primary", use_container_width=True):
+                st.session_state["planner_prefill"] = state["top_places"][0]["name"] if state.get("top_places") else state["name"]
+                st.switch_page("app_pages/trip_planner.py")
+
+        if st.session_state.get(weather_key, False):
+            with st.spinner(f"Fetching live weather for {state['weather_city']}..."):
+                w = get_weather(state["weather_city"])
+                source_label = "🟢 Live (OpenWeather API)" if w.get("source") == "live" else "🟡 Curated Regional Climate"
+                st.info(
+                    f"**{state['weather_city']} Current Weather:** {w.get('temp')}°C (Feels like {w.get('feels_like')}°C) • "
+                    f"**{w.get('condition')}** ({w.get('description')}) • "
+                    f"Humidity: {w.get('humidity')}% • Wind: {w.get('wind_speed')} km/h • "
+                    f"{source_label}",
+                    icon=":material/wb_sunny:"
+                )
